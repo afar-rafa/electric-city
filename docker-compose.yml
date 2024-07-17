@@ -1,0 +1,10 @@
+services:
+  terminal:
+    container_name: terminal
+    image: python:3
+    entrypoint: bash
+    working_dir: /srv
+    volumes:
+      - .:/srv
+    # ports:
+    #   - "8124:8124"
