@@ -3,8 +3,10 @@ TIMER
 
 Este es solo un draft en donde trate de crear una clase que vaya trackeando el paso del tiempo
 """
+
 import datetime
 import helpers.constants as c
+
 
 class Timer:
     def __init__(self) -> None:

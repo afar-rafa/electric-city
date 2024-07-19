@@ -1,7 +1,11 @@
 import csv
+import datetime
 from typing import List
 
-from classes.models import Edificio
+import numpy as np
+
+CSV_DELIMITER = "\t"
+CSV_QUOTECHAR = '"'
 
 
 class DB:
@@ -19,40 +23,43 @@ class DB:
 
     def agregar_a_csv(
         self,
-        name: str,
-        rows: List[str | int | float],
+        nombre: str,
+        fila: List[str | int | float],
     ):
         # writing to csv file
-        with open(name, "a") as csvfile:
+        with open(nombre, "a") as csvfile:
             # creating a csv writer object
             csvwriter = csv.writer(csvfile)
-            # writing the data rows
-            csvwriter.writerows(rows)
+            # writing the data filas
+            csvwriter.writerows([fila])
 
-    def crear_archivo_de_edificio(self, e: Edificio):
+    def leer_fila_de_csv(
+        self,
+        nombre: str,
+    ):
+        with open(nombre, newline="") as csvfile:
+            spamreader = csv.reader(
+                csvfile, delimiter=CSV_DELIMITER, quotechar=CSV_QUOTECHAR
+            )
+            for row in spamreader:
+                yield row
+
+    def obtener_headers_de_csv(self, nombre):
+        with open(nombre, newline="") as csvfile:
+            spamreader = csv.reader(
+                csvfile, delimiter=CSV_DELIMITER, quotechar=CSV_QUOTECHAR
+            )
+            for row in spamreader:
+                return row
+
+
+    def crear_archivo_de_edificio(self, e: "Edificio"):  # type: ignore
         self.crear_csv(
-            name=f"{e}",
-            headers=["Tiempo"] + [f"{v}" for v in e.vehiculos]
+            name=f"{e}.csv", headers=["Tiempo"] + [f"{v}" for v in e.vehiculos]
         )
 
-
-# field names
-fields = ["Time", "Battery"]
-# data rows of csv file
-rows = [
-    ["Nikhil", "COE"],
-    ["Sanchit", "COE"],
-    ["Aditya", "IT"],
-    ["Sagar", "SE"],
-    ["Prateek", "MCE"],
-    ["Sahil", "EP"],
-]
-# name of csv file
-filename = "test.csv"
-
-db = DB()
-db.write_csv_file(
-    filename,
-    fields,
-    rows,
-)
+    def actualizar_estado_de_edificio(self, t: datetime.time, e: "Edificio"):  # type: ignore
+        tiempo = t.strftime("%H:%M")
+        energias = [float(np.round(v.energia, 2)) for v in e.vehiculos]
+        print([tiempo] + [energias])
+        self.agregar_a_csv(nombre=f"{e}.csv", fila=[tiempo] + energias)

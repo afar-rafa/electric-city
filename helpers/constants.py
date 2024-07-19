@@ -2,20 +2,13 @@
 MINS_POR_CICLO = 15
 
 # Vehicle constants
-# battery
-EV_BATTERY_AVG = 41
-EV_BATTERY_SD = 25
 # Performance (rendimiento)
-EV_PERF_AVG = 218
-EV_PERF_SD = 130
-# Consumption (consumo)
-EV_CONS_AVG = 200
-EV_CONS_SD = 40
-# Energy (energia)
-EV_ENERGY_AVG = 0
-EV_ENERGY_SD = 10
-# Initial state (estado)
-EV_T0_AVG = 0
-EV_T0_SD = 10
+EV_PERF_AVG, EV_PERF_SD = 218, 130
+# Consumption (consumo por minuto)
+EV_CONS_AVG, EV_CONS_SD = 10, 5
+# max battery (capacidad de bateria)
+EV_BATTERY_AVG, EV_BATTERY_SD = 4100, 250
+# Energy (carga en bateria)
+EV_ENERGY_AVG, EV_ENERGY_SD = 0, 200
 
 MAX_VEHICULOS_EN_CARGA = 5

@@ -1,10 +1,9 @@
-from classes.models import Ciudad
+from classes.models import Simulacion
 
-city = Ciudad(
+s = Simulacion(
     "Super City",
     cant_edificios=1,
     vehiculo_por_edificio=1,
 )
 
-for edificio in city.edificios:
-    print(edificio)
+s.empezar()
