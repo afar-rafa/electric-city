@@ -1,23 +1,24 @@
-
-
 from typing import List
 from math import ceil, floor
 
 
-arr1 = [100, 105, 110, 115, 120, 125, 130, 135] # mean: 8, 9
-arr2 = [104, 108, 112, 116, 118, 120, 124, 128] # mean: 88
+arr1 = [100, 105, 110, 115, 120, 125, 130, 135]  # mean: 8, 9
+arr2 = [104, 108, 112, 116, 118, 120, 124, 128]  # mean: 88
 
-print(f"{arr1=}\n{arr2=}\n1+2={sorted(arr1+arr2)}\nmedian ({len(arr1+arr2)/2}) should be {sorted(arr1+arr2)[floor(len(arr1+arr2)/2)]}")
+print(
+    f"{arr1=}\n{arr2=}\n1+2={sorted(arr1+arr2)}\nmedian ({len(arr1+arr2)/2}) should be {sorted(arr1+arr2)[floor(len(arr1+arr2)/2)]}"
+)
+
 
 def split_on_median(arr: List[int]) -> List[int]:
     # [9, 11, 34, 67, 89, 99] -> 3
     l = int(len(arr) / 2)
     if len(arr) % 2 == 0:
         # print(f"{l=} is double")
-        return (arr[l-1]+arr[l])/2, arr[:l], arr[l:]
+        return (arr[l - 1] + arr[l]) / 2, arr[:l], arr[l:]
 
     # print(f"{l=} is simple")
-    return arr[l], arr[:l+1], arr[l:]
+    return arr[l], arr[: l + 1], arr[l:]
 
 
 for i in range(10):
