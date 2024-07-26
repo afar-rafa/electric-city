@@ -5,17 +5,17 @@ Este es solo un draft en donde trate de crear una clase que vaya trackeando el p
 """
 
 import datetime
+import logging
 import helpers.constants as c
+
+logger = logging.getLogger(__name__)
 
 
 class Timer:
     def __init__(self) -> None:
         # parte hoy a las 00:00:00
         self.fecha_actual = datetime.date.today()
-        self.tiempo_actual = datetime.datetime.combine(
-            self.fecha_actual,
-            datetime.time(0, 0),
-        )
+        self.tiempo_actual = None
 
     def set_hh_mm(self, time_str: str) -> datetime.datetime:
         """
@@ -23,8 +23,9 @@ class Timer:
         y reemplaza el tiempo actual con el entregado
         """
         # revisar si pasamos al sgte día
-        if self.tiempo_actual.time() > datetime.time(0, 0) and time_str == "00:00":
+        if self.tiempo_actual and time_str == "0:00":
             self.fecha_actual = (self.tiempo_actual + datetime.timedelta(days=1)).date()
+            logger.debug(f"Timer: new day -> {self.fecha_actual.strftime("%Y-%m-%d")}")
 
         # transform time_str into datetime
         t = datetime.datetime.combine(
