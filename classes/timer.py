@@ -17,6 +17,26 @@ class Timer:
         self.fecha_actual = datetime.date.today()
         self.tiempo_actual = None
 
+    @staticmethod
+    def new_time(time_str: str) -> datetime.datetime:
+        """
+        Crea instancias de datetime a partir de un string "HH:MM"
+        y la fecha actual
+        """
+        h, m = (int(i) for i in time_str.split(":"))
+        return datetime.datetime.combine(
+                datetime.datetime.now().date(),
+                datetime.time(hour=h, minute=m),
+            )
+
+    @staticmethod
+    def distancia_en_minutos(
+        desde: datetime.datetime | None = None,
+        hasta: datetime.datetime | None = None,
+    ):
+        # total difference in minutes
+        return (hasta - desde).total_seconds() / 60
+
     def set_hh_mm(self, time_str: str) -> datetime.datetime:
         """
         Crea instancias de datetime a partir de un string "HH:MM"
@@ -25,7 +45,7 @@ class Timer:
         # revisar si pasamos al sgte día
         if self.tiempo_actual and time_str == "0:00":
             self.fecha_actual = (self.tiempo_actual + datetime.timedelta(days=1)).date()
-            logger.debug(f"Timer: new day -> {self.fecha_actual.strftime("%Y-%m-%d")}")
+            logger.debug(f"Timer: new day -> {self.fecha_actual.strftime('%y-%m-%d')}")
 
         # transform time_str into datetime
         t = datetime.datetime.combine(
@@ -43,14 +63,3 @@ class Timer:
             self.tiempo_actual,
             "%Y-%m-%d %H:%M",
         )
-
-    def siguiente(self):
-        self.tiempo_actual += datetime.timedelta(minutes=c.MINS_POR_CICLO)
-
-    @staticmethod
-    def distancia_en_minutos(
-        desde: datetime.datetime | None = None,
-        hasta: datetime.datetime | None = None,
-    ):
-        # total difference in minutes
-        return (hasta - desde).total_seconds() / 60

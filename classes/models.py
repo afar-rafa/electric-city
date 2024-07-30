@@ -35,10 +35,16 @@ class Vehiculo:
 
         # se le asigna un edificio cuando son creados en uno
         self.edificio = None
+        self.en_el_edificio = True
+        self.necesita_carga = None
 
         # obtener salidas para el dia
-        self.salidas = salidas_random(cant=3)
-        self.siguiente_salida = 0 # indice
+        self.salidas = salidas_random(
+            cant=c.CANT_SALIDAS,
+            desde=Timer.new_time("09:00"),
+            hasta=Timer.new_time("21:00"),
+        )
+        self.siguiente_salida = 0  # indice
 
         # ------------------------ parametros ------------------------
         self.max_bateria = get_rand_normal(c.MAX_BATERIA_AVG, c.MAX_BATERIA_STD)
@@ -55,7 +61,7 @@ class Vehiculo:
         self.velocidad_promedio = 50  # KM/h
 
     def consumo_de_viaje(self, velocidad: int, minutos: int) -> float:
-        return self.consumo * velocidad * minutos / 60 # KW/min
+        return self.consumo * velocidad * minutos / 60  # KW/min
 
     def viajar(self):
         """
@@ -65,8 +71,31 @@ class Vehiculo:
         logger.info(f"{self} perdio bateria [{gasto=:.2f}]")
 
         self.bateria -= gasto
-        # # TODO: que no baje de 0
-        # self.bateria = max(self.bateria, 0)
+
+        # que no baje de 0
+        self.bateria = max(self.bateria, -5)
+
+    @property
+    def gasto_sgte_salida(self) -> float:
+        salida, llegada = self.salidas[self.siguiente_salida]
+        return self.consumo_de_viaje(
+            self.velocidad_promedio, minutos=(llegada - salida).total_seconds() / 60
+        )
+
+    @property
+    def necesita_cargarse(self) -> bool:
+        """
+        Revisa si tiene suficiente para su sgte viaje
+        """
+        necesita_carga = self.bateria < self.gasto_sgte_salida
+        logger.debug(
+            f"{self}: necesita_cargarse? [bateria={self.bateria:.2f} < {self.gasto_sgte_salida:.2f}] = {necesita_carga}"
+        )
+        return necesita_carga
+
+    @property
+    def cargado_full(self) -> bool:
+        return self.bateria == self.max_bateria
 
     def cargar(self, energia: int):
         """
@@ -77,58 +106,32 @@ class Vehiculo:
         self.bateria = min(self.bateria, self.max_bateria)
         logger.info(f"{self} carga energia [bateria={self.bateria:.2f}]")
 
-    @property
-    def necesita_cargarse(self) -> bool:
+    def actualizar_status(self, t: datetime.time) -> None:
         """
-        TODO: Aca falta incluir logica para que revise
-        si tiene suficiente para su sgte viaje
+        self.necesita_carga:  si tiene suficiente para su sgte viaje
+        self.en_el_edificio:  si esta en el edificio en el tiempo t
         """
-        return not self.cargado_full
+        # Revisar si tiene suficiente para su siguiente viaje
+        self.necesita_carga = self.necesita_cargarse
 
-    @property
-    def cargado_full(self) -> bool:
-        return self.bateria == self.max_bateria
-
-    @property
-    def cargado_full(self) -> bool:
-        return self.bateria == self.max_bateria
-
-    # def en_el_edificio(self, t: datetime.time) -> bool:
-    #     """
-    #     retorna true si esta en el edificio en el tiempo t
-    #     """
-    #     for salida, llegada in self.salidas:
-    #         if salida <= t <= llegada:
-    #             logger.debug(
-    #                 f"esta fuera: {salida} <= {t} <= {llegada} = {salida <= t <= llegada}"
-    #             )
-    #             return False
-
-    #     logger.debug(
-    #         f"esta dentro: {salida} <= {t} <= {llegada} = {salida <= t <= llegada}"
-    #     )
-    #     return True
-
-    def en_el_edificio(self, t: datetime.time) -> bool:
-        """
-        retorna true si esta en el edificio en el tiempo t
-        """
+        # Revisar si está en el edificio
         salida, llegada = self.salidas[self.siguiente_salida]
+        logger.debug(
+            f"{self}: actualizar_status {salida.strftime('%H:%M')} <= {t.strftime('%H:%M')} <= {llegada.strftime('%H:%M')} = {salida <= t <= llegada}"
+        )
+
         if salida <= t <= llegada:
-            logger.debug(
-                f"esta fuera: {salida} <= {t} <= {llegada} = {salida <= t <= llegada}"
-            )
-        
+            logger.info(f"{self}: esta fuera de {self.edificio}")
+
             if t == llegada:
                 self.siguiente_salida = (self.siguiente_salida + 1) % len(self.salidas)
-                logger.info(f"{self} en_el_edificio: {self.siguiente_salida=}")
+                logger.info(f"{self}: {self.siguiente_salida=}")
 
-            return False
+            self.en_el_edificio = False
+            return
 
-        logger.debug(
-            f"esta dentro: {salida} <= {t} <= {llegada} = {salida <= t <= llegada}"
-        )
-        return True
+        logger.info(f"{self}: esta dentro de {self.edificio}")
+        self.en_el_edificio = True
 
     ############################################################
     # Helper tools
@@ -151,7 +154,10 @@ class Edificio:
     EJ: crear un edificio con 10 autos:
 
     ```
-    b = Edificio(cant_vehiculos=10)
+    b = Edificio(
+        nombre="Edificio FIFO",
+        cant_vehiculos=10,
+    )
     ```
     """
 
@@ -163,12 +169,10 @@ class Edificio:
         self.nombre = nombre
 
         # Potencia total disponible del edificio
-        self.potencia_declarada = 250000  # KW
-        # self.potencia_declarada = get_rand_normal(250000, 50000)
+        self.potencia_declarada = c.POTENCIA_DECLARADA
 
-        # potencia de cargadores de Vehiculos
-        self.potencia_cargadores = 15  # KWh
-        # self.potencia_cargadores = get_rand_normal(15, 7) # KWh
+        # potencia de los cargadores de Vehiculos
+        self.potencia_cargadores = c.POTENCIA_CARGADORES
 
         # potencia disponible, calculada en todo momento
         self.potencia_disponble: float | None = None
@@ -176,8 +180,6 @@ class Edificio:
         # colas de vehiculos
         self.cola_de_espera: List[Vehiculo] = []
         self.cola_de_carga: List[Vehiculo] = []
-        # TODO: pasar a su propia clase:
-        # self.cola_de_carga = ColaFIFO()
 
         # crear vehiculos
         self.vehiculos: List[Vehiculo] = []
@@ -207,11 +209,28 @@ class Edificio:
     ############################################################
     # Cola de espera
     ############################################################
-    def agregar_a_cola_de_espera(self, v: Vehiculo):
+    def _agregar_a_cola_de_espera(self, v: Vehiculo):
         if v not in self.cola_de_espera and v not in self.cola_de_carga:
             logger.debug(f"{v}: agregando a cola de espera")
             self.cola_de_espera.append(v)
             logger.debug(f"{v}: {self.cola_de_espera=}")
+
+    def agregar_a_cola_de_espera(self, autos_a_cargar: List[Vehiculo]):
+        # primero poner en espera los que necesitan carga para su sgte viaje
+        for v in [v for v in autos_a_cargar if v.necesita_carga]:
+            logger.info(
+                f"%s: {v} - necesita carga [{v.bateria:.2f} < {v.gasto_sgte_salida:.2f}]",
+                self,
+            )
+            self._agregar_a_cola_de_espera(v)
+
+        # luego los que no estan a full
+        for v in [v for v in autos_a_cargar if not v.necesita_carga]:
+            logger.info(
+                f"%s: {v} - no esta a full [{v.bateria:.2f} < {v.max_bateria:.2f}]",
+                self,
+            )
+            self._agregar_a_cola_de_espera(v)
 
     def sacar_de_cola_de_espera(self, v: Vehiculo):
         if v in self.cola_de_espera:
@@ -230,16 +249,18 @@ class Edificio:
             logger.debug(f"{v}: agregando a cola de carga")
             self.cola_de_carga.append(v)
 
+    def actualizar_cola_de_carga(self):
+        while self.cola_de_espera and not self.cola_de_carga_llena:
+            self.agregar_a_cola_de_carga(
+                self.siguiente_en_cola_de_espera(),
+            )
+        logger.info(f"%s: actualizada {self.cola_de_carga=}", self)
+
     def limpiar_cola_de_carga(self):
         """
         Quita los vehiculos que ya estan a full carga
         """
-        self.cola_de_carga = [
-            v
-            for v in self.cola_de_carga 
-            if not v.cargado_full
-            # or if suficiente para sgte salida
-        ]
+        self.cola_de_carga = [v for v in self.cola_de_carga if v.necesita_carga]
 
     @property
     def cola_de_carga_llena(self):
@@ -266,10 +287,7 @@ class Edificio:
 
     @property
     def bateria_de_vehiculos(self):
-        return [
-            float(np.round(v.bateria, 2))
-            for v in self.vehiculos
-        ]
+        return [float(np.round(v.bateria, 2)) for v in self.vehiculos]
 
     ############################################################
     # Simular paso del tiempo
@@ -277,12 +295,20 @@ class Edificio:
     def simular_ciclo(
         self,
         t: datetime.time,
+        consumo: str,
     ):
+        self.actualizar_potencia_disponble(consumo)
+
+        # los esto es para separar aquellos que necesitan carga para
+        # su siguiente viaje y aquellos que solo no están a 100%
+        autos_a_cargar: List[Vehiculo] = []
+
         for v in self.vehiculos:
             logger.debug("%s: revisando %s", self, v)
+            v.actualizar_status(t)
+
             # si esta fuera, descontarle bateria segun corresponda
-            if not v.en_el_edificio(t):
-                logger.debug(f"%s: {v} - no esta en el edificio", self)
+            if not v.en_el_edificio:
                 # sacarlo de las colas
                 self.sacar_de_cola_de_espera(v)
                 self.sacar_de_cola_de_carga(v)
@@ -290,30 +316,33 @@ class Edificio:
 
             # si esta en el edificio, cargarlo si es necesario
             else:
-                logger.debug(f"%s: {v} - esta en el edificio", self)
                 # agregar los vehiculos que no estan a full
-                if v.necesita_cargarse:
-                    logger.debug(f"%s: {v} - necesita cargarse", self)
-                    self.agregar_a_cola_de_espera(v)
+                if not v.cargado_full:
+                    autos_a_cargar.append(v)
+
+        # pasar a cola de espera los autos que necesiten carga
+        logger.debug(f"%s: {autos_a_cargar=}", self)
+        self.agregar_a_cola_de_espera(autos_a_cargar)
+
+        logger.info(f"%s: {self.cola_de_espera=}", self)
 
         # agregar vehiculos a cola de carga si se puede
-        while self.cola_de_espera and not self.cola_de_carga_llena:
-            self.agregar_a_cola_de_carga(
-                self.siguiente_en_cola_de_espera(),
-            )
-        logger.debug(f"%s: actualizada {self.cola_de_carga=}", self)
+        self.actualizar_cola_de_carga()
 
         # cargar vehiculos en cola de carga
         self.cargar_vehiculos()
-        # sacar los que quedaron full
+
+        # sacar los que quedaron ok
         self.limpiar_cola_de_carga()
-        logger.debug(f"%s: final {self.cola_de_carga=}", self)
+
+        logger.info(f"{self}: finalmente {self.cola_de_carga=}")
 
     ############################################################
     # Helper tools
     ############################################################
     def __repr__(self) -> str:
         return self.nombre
+
 
 class EdificioFIFO(Edificio):
     ############################################################
@@ -328,6 +357,7 @@ class EdificioFIFO(Edificio):
     # def siguiente_en_cola_de_espera(self) -> Vehiculo:
     #     return self.cola_de_espera.pop(0)
     pass
+
 
 class Simulacion:
     def __init__(
@@ -361,11 +391,13 @@ class Simulacion:
 
     def empezar(self):
         # Crea los archivos para cada edificio
-        [self.db.crear_archivo_de_edificio(e) for e in self.edificios]
-        [
-            [logger.debug(f"{e} - {v}: {v.salidas_str}") for v in e.vehiculos]
-            for e in self.edificios
-        ]
+        self.db.crear_archivo_de_edificios(self.edificios)
+
+        # mostrar datos de cada vehiculo en los edificios
+        for e in self.edificios:
+            for v in e.vehiculos:
+                logger.info(f"{e} - {v}: {v.max_bateria=}")
+                logger.info(f"{e} - {v}: salidas={v.salidas_str}")
 
         # Inicia la simulacion
         for tiempo, *consumos in self.db.leer_csv("potencia_consumida.csv"):
@@ -374,14 +406,16 @@ class Simulacion:
                 continue
 
             t = self.timer.set_hh_mm(tiempo)
+            logger.info(f"Simulacion: t={t.strftime('%H:%M')}")
 
             for i, e in enumerate(self.edificios):
-                e.actualizar_potencia_disponble(consumos[i])
-
-                e.simular_ciclo(t)
+                e.simular_ciclo(t, consumo=consumos[i])
 
                 # exportar el minuto actual a un .csv
                 self.db.guardar_estado_de_edificio(
-                    tiempo=self.timer.actual_str, 
+                    tiempo=self.timer.actual_str,
                     edificio=e,
                 )
+
+            # # uncomment this for a step by step execution
+            # input("PRESS ENTER TO CONTINUE, CTRL+D TO EXIT")

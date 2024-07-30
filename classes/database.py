@@ -59,11 +59,15 @@ class DB:
             for row in spamreader:
                 return row
 
-    def crear_archivo_de_edificio(self, e: "Edificio"):  # type: ignore
-        self.crear_csv(
-            name=f"{e}.csv",
-            headers=["Tiempo", "Potencia Disponible"] + [f"{v}" for v in e.vehiculos],
-        )
+    def crear_archivo_de_edificios(self, edificios: List["Edificio"]):  # type: ignore
+        [
+            self.crear_csv(
+                name=f"{e}.csv",
+                headers=["Tiempo", "Potencia Disponible"]
+                + [f"{v}" for v in e.vehiculos],
+            )
+            for e in edificios
+        ]
 
     def guardar_estado_de_edificio(self, tiempo: str, edificio: "Edificio"):  # type: ignore
         fila = [tiempo, edificio.potencia_disponble] + edificio.bateria_de_vehiculos
