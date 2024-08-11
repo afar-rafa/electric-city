@@ -1,10 +1,3 @@
-"""
-Classes
-
-Luego de tener las constantes y "helper functions" (utils) creamos las clases
-base que necesitarás para que tu memoria pueda partir: vehiculos y edificios
-"""
-
 import datetime
 import logging
 from queue import Queue
@@ -15,133 +8,10 @@ import numpy as np
 from classes.database import DB
 import helpers.constants as c
 from classes.timer import Timer
+from classes.vehiculo import Vehiculo
 from helpers.utils import get_rand_normal, salidas_random
 
 logger = logging.getLogger(__name__)
-
-
-class Vehiculo:
-    """
-    Clase principal para crear un vehiculo electrico.
-    """
-
-    def __init__(self, nombre: str):
-        """
-        Cada vehiculo es creado con sus variables ya definidas
-        usando la funcion normal que esta en utils
-        y las constantes de mas arriba
-        """
-        self.nombre = nombre
-
-        # se le asigna un edificio cuando son creados en uno
-        self.edificio = None
-        self.en_el_edificio = True
-        self.necesita_carga = None
-
-        # obtener salidas para el dia
-        self.salidas = salidas_random(
-            cant=c.CANT_SALIDAS,
-            desde=Timer.new_time("09:00"),
-            hasta=Timer.new_time("21:00"),
-        )
-        self.siguiente_salida = 0  # indice
-
-        # ------------------------ parametros ------------------------
-        self.max_bateria = get_rand_normal(c.MAX_BATERIA_AVG, c.MAX_BATERIA_STD)
-
-        # Cuanto tiene la bateria inicialmente (y que no sobrepase el limite)
-        self.bateria = get_rand_normal(c.MAX_BATERIA_AVG / 2, c.MAX_BATERIA_STD)
-        self.bateria = min(self.bateria, self.max_bateria)
-
-        # rendimiento en KM/KWh
-        self.rendimiento = get_rand_normal(c.RENDIMIENTO_AVG, c.RENDIMIENTO_STD)
-        # consumo en KWh/KM
-        self.consumo = 1 / self.rendimiento
-
-        self.velocidad_promedio = 50  # KM/h
-
-    def consumo_de_viaje(self, velocidad: int, minutos: int) -> float:
-        return self.consumo * velocidad * minutos / 60  # KW/min
-
-    def viajar(self):
-        """
-        Gasta energia segun consumo, velocidad promedio y tiempo
-        """
-        gasto = self.consumo_de_viaje(self.velocidad_promedio, c.MINS_POR_CICLO)
-        logger.info(f"{self} perdio bateria [{gasto=:.2f}]")
-
-        self.bateria -= gasto
-
-        # que no baje de 0
-        self.bateria = max(self.bateria, -5)
-
-    @property
-    def gasto_sgte_salida(self) -> float:
-        salida, llegada = self.salidas[self.siguiente_salida]
-        return self.consumo_de_viaje(
-            self.velocidad_promedio, minutos=(llegada - salida).total_seconds() / 60
-        )
-
-    @property
-    def necesita_cargarse(self) -> bool:
-        """
-        Revisa si tiene suficiente para su sgte viaje
-        """
-        necesita_carga = self.bateria < self.gasto_sgte_salida
-        logger.debug(
-            f"{self}: necesita_cargarse? [bateria={self.bateria:.2f} < {self.gasto_sgte_salida:.2f}] = {necesita_carga}"
-        )
-        return necesita_carga
-
-    @property
-    def cargado_full(self) -> bool:
-        return self.bateria == self.max_bateria
-
-    def cargar(self, energia: int):
-        """
-        Carga la energia indicada.
-        Si sobrepasa lo que aguanta la bateria, deja el valor de la bateria
-        """
-        self.bateria += energia
-        self.bateria = min(self.bateria, self.max_bateria)
-        logger.info(f"{self} carga energia [bateria={self.bateria:.2f}]")
-
-    def actualizar_status(self, t: datetime.time) -> None:
-        """
-        self.necesita_carga:  si tiene suficiente para su sgte viaje
-        self.en_el_edificio:  si esta en el edificio en el tiempo t
-        """
-        # Revisar si tiene suficiente para su siguiente viaje
-        self.necesita_carga = self.necesita_cargarse
-
-        # Revisar si está en el edificio
-        salida, llegada = self.salidas[self.siguiente_salida]
-        logger.debug(
-            f"{self}: actualizar_status {salida.strftime('%H:%M')} <= {t.strftime('%H:%M')} <= {llegada.strftime('%H:%M')} = {salida <= t <= llegada}"
-        )
-
-        if salida <= t <= llegada:
-            logger.info(f"{self}: esta fuera de {self.edificio}")
-
-            if t == llegada:
-                self.siguiente_salida = (self.siguiente_salida + 1) % len(self.salidas)
-                logger.info(f"{self}: {self.siguiente_salida=}")
-
-            self.en_el_edificio = False
-            return
-
-        logger.info(f"{self}: esta dentro de {self.edificio}")
-        self.en_el_edificio = True
-
-    ############################################################
-    # Helper tools
-    ############################################################
-    def __repr__(self) -> str:
-        return self.nombre
-
-    @property
-    def salidas_str(self):
-        return [(s.strftime("%H:%M"), e.strftime("%H:%M")) for s, e in self.salidas]
 
 
 class Edificio:
@@ -345,77 +215,15 @@ class Edificio:
 
 
 class EdificioFIFO(Edificio):
-    ############################################################
-    # Cola de espera
-    ############################################################
-    # def agregar_a_cola_de_espera(self, v: Vehiculo):
-    #     if v not in self.cola_de_espera and v not in self.cola_de_carga:
-    #         logger.debug(f"{v}: agregando a cola de espera")
-    #         self.cola_de_espera.append(v)
-    #         logger.debug(f"{v}: {self.cola_de_espera=}")
-
-    # def siguiente_en_cola_de_espera(self) -> Vehiculo:
-    #     return self.cola_de_espera.pop(0)
     pass
 
 
-class Simulacion:
-    def __init__(
-        self,
-        nombre: str,
-        vehiculos_por_edificio: int,
-        archivo_potencias: str,
-    ):
-        self.nombre = nombre
 
-        # base de datos para importar/exportar datos
-        self.db = DB()
-        # timer para manejar tiempos
-        self.timer = Timer()
+class EdificioAlgoritmo(Edificio):
+    pass
 
-        # sacar del header los nombres de cada edificio
-        csv_edificios = self.db.headers_de_csv(nombre=archivo_potencias)[1:]
 
-        # revisar que los numeros sean razonables
-        if not csv_edificios:
-            raise ValueError(f"Cantidad invalida de edificios [{csv_edificios=}]")
 
-        # crear los efificios con sus respectivos vehiculos
-        self.edificios: List[Edificio] = [
-            EdificioFIFO(
-                nombre=e,
-                cant_vehiculos=vehiculos_por_edificio,
-            )
-            for e in csv_edificios
-        ]
+class EdificioTercero(Edificio):
+    pass
 
-    def empezar(self):
-        # Crea los archivos para cada edificio
-        self.db.crear_archivo_de_edificios(self.edificios)
-
-        # mostrar datos de cada vehiculo en los edificios
-        for e in self.edificios:
-            for v in e.vehiculos:
-                logger.info(f"{e} - {v}: {v.max_bateria=}")
-                logger.info(f"{e} - {v}: salidas={v.salidas_str}")
-
-        # Inicia la simulacion
-        for tiempo, *consumos in self.db.leer_csv("potencia_consumida.csv"):
-            # saltar los headers
-            if tiempo == "Tiempo":
-                continue
-
-            t = self.timer.set_hh_mm(tiempo)
-            logger.info(f"Simulacion: t={t.strftime('%H:%M')}")
-
-            for i, e in enumerate(self.edificios):
-                e.simular_ciclo(t, consumo=consumos[i])
-
-                # exportar el minuto actual a un .csv
-                self.db.guardar_estado_de_edificio(
-                    tiempo=self.timer.actual_str,
-                    edificio=e,
-                )
-
-            # # uncomment this for a step by step execution
-            # input("PRESS ENTER TO CONTINUE, CTRL+D TO EXIT")

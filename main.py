@@ -1,6 +1,6 @@
 import logging
 import random
-from classes.models import Simulacion
+from classes.simulacion import Simulacion
 from helpers.constants import LOG_LEVEL
 
 import numpy as np
