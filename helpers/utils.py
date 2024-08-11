@@ -10,6 +10,7 @@ En este caso saqué la funcion normal, porque la estabas usando en todos los par
 
 import datetime
 from random import sample
+
 import numpy as np
 
 from helpers.constants import MINS_POR_CICLO

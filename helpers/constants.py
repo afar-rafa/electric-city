@@ -12,10 +12,10 @@ POTENCIA_CARGADORES = 7  # KWh
 
 # ------------------- Constantes Vehiculos --------------------
 # AVG de autos
-MAX_BATERIA_AVG = 82.3              # kWh
+MAX_BATERIA_AVG = 82.3  # kWh
 MAX_BATERIA_STD = math.sqrt(28.67)  # kWh
-RENDIMIENTO_AVG = 5.97              # km/kWh
-RENDIMIENTO_STD = math.sqrt(1.16)   # km/kWh
+RENDIMIENTO_AVG = 5.97  # km/kWh
+RENDIMIENTO_STD = math.sqrt(1.16)  # km/kWh
 
 # TODO: Falta logica para estas variables
 CANT_SALIDAS = 3

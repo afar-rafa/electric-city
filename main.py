@@ -1,9 +1,10 @@
 import logging
 import random
-from classes.simulacion import Simulacion
-from helpers.constants import LOG_LEVEL
 
 import numpy as np
+
+from classes.simulacion import Simulacion
+from helpers.constants import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

@@ -1,15 +1,11 @@
 import datetime
 import logging
-from queue import Queue
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 
-from classes.database import DB
 import helpers.constants as c
-from classes.timer import Timer
 from classes.vehiculo import Vehiculo
-from helpers.utils import get_rand_normal, salidas_random
 
 logger = logging.getLogger(__name__)
 
@@ -218,12 +214,9 @@ class EdificioFIFO(Edificio):
     pass
 
 
-
 class EdificioAlgoritmo(Edificio):
     pass
 
 
-
 class EdificioTercero(Edificio):
     pass
-

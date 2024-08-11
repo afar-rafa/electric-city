@@ -6,6 +6,7 @@ Este es solo un draft en donde trate de crear una clase que vaya trackeando el p
 
 import datetime
 import logging
+
 import helpers.constants as c
 
 logger = logging.getLogger(__name__)
@@ -25,9 +26,9 @@ class Timer:
         """
         h, m = (int(i) for i in time_str.split(":"))
         return datetime.datetime.combine(
-                datetime.datetime.now().date(),
-                datetime.time(hour=h, minute=m),
-            )
+            datetime.datetime.now().date(),
+            datetime.time(hour=h, minute=m),
+        )
 
     @staticmethod
     def distancia_en_minutos(

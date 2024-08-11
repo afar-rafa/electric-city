@@ -2,8 +2,8 @@ import logging
 from typing import List
 
 from classes.database import DB
+from classes.edificio import Edificio, EdificioFIFO
 from classes.timer import Timer
-from classes.edificio import EdificioFIFO, Edificio
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,5 @@
-from typing import List
 from math import ceil, floor
-
+from typing import List
 
 arr1 = [100, 105, 110, 115, 120, 125, 130, 135]  # mean: 8, 9
 arr2 = [104, 108, 112, 116, 118, 120, 124, 128]  # mean: 88
