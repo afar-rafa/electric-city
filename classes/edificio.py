@@ -1,3 +1,4 @@
+import copy
 import datetime
 import logging
 from typing import List
@@ -33,6 +34,7 @@ class Edificio:
         cant_vehiculos: int,
     ):
         self.nombre = nombre
+        self.tipo_edificio = ""  # FIFO/Inteligente/Otro
 
         # Potencia total disponible del edificio
         self.potencia_declarada = c.POTENCIA_DECLARADA
@@ -73,13 +75,27 @@ class Edificio:
         self.potencia_disponble = max(self.potencia_declarada - consumo, 0)
 
     ############################################################
+    # Transformaciones
+    # Estos metodos retornan una copia del edificio transformado
+    # a un edificioFIFO o EdifocioInteligente
+    ############################################################
+    def copia_FIFO(self):
+        e = copy.deepcopy(self)
+        e.__class__ = EdificioFIFO
+        e.tipo_edificio = "FIFO"
+        return e
+
+    def copia_Inteligente(self):
+        e = copy.deepcopy(self)
+        e.__class__ = EdificioInteligente
+        e.tipo_edificio = "INT"
+        return e
+
+    ############################################################
     # Cola de espera
     ############################################################
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
-        if v not in self.cola_de_espera and v not in self.cola_de_carga:
-            logger.debug(f"{v}: agregando a cola de espera")
-            self.cola_de_espera.append(v)
-            logger.debug(f"{v}: {self.cola_de_espera=}")
+        raise NotImplementedError
 
     def agregar_a_cola_de_espera(self, autos_a_cargar: List[Vehiculo]):
         # primero poner en espera los que necesitan carga para su sgte viaje
@@ -111,7 +127,7 @@ class Edificio:
     # Lista de carga
     ############################################################
     def agregar_a_cola_de_carga(self, v: Vehiculo):
-        if v not in self.cola_de_carga:
+        if v not in self.cola_de_carga and not self.cola_de_carga_llena:
             logger.debug(f"{v}: agregando a cola de carga")
             self.cola_de_carga.append(v)
 
@@ -130,7 +146,15 @@ class Edificio:
 
     @property
     def cola_de_carga_llena(self):
-        return len(self.cola_de_carga) >= c.MAX_VEHICULOS_EN_CARGA
+        if hasattr(c, "MAX_VEHICULOS_EN_CARGA") and c.MAX_VEHICULOS_EN_CARGA:
+            max_capacidad = c.MAX_VEHICULOS_EN_CARGA
+        else:
+            max_capacidad = int(self.potencia_disponble / self.potencia_cargadores)
+
+        logger.debug(
+            f"cola_de_carga_llena? en_carga={len(self.cola_de_carga)} >= {max_capacidad=}"
+        )
+        return len(self.cola_de_carga) >= max_capacidad
 
     @property
     def energia_a_cargar(self) -> float:
@@ -207,16 +231,45 @@ class Edificio:
     # Helper tools
     ############################################################
     def __repr__(self) -> str:
-        return self.nombre
+        return f"{self.nombre} {self.tipo_edificio}"
 
 
 class EdificioFIFO(Edificio):
-    pass
+    """
+    Apenas los vehículos estan en cola de espera
+    se agregan a la cola de carga en orden de llegada
+    """
+
+    def __init__(self, nombre: str, cant_vehiculos: int):
+        super().__init__(nombre, cant_vehiculos)
+        self.tipo_edificio = "FIFO"
+
+    def _agregar_a_cola_de_espera(self, v: Vehiculo):
+        if v not in self.cola_de_espera and v not in self.cola_de_carga:
+            logger.debug(f"{v}: agregando a cola de espera")
+            self.cola_de_espera.append(v)
+            logger.debug(f"{v}: {self.cola_de_espera=}")
 
 
-class EdificioAlgoritmo(Edificio):
-    pass
+class EdificioInteligente(Edificio):
+    """
+    Cuando los vehículos estan en cola de espera
+    los ordena según:
+    - su % de energía en la batería
+    - cuánto tiempo lleva en espera
+    """
 
+    def __init__(self, nombre: str, cant_vehiculos: int):
+        super().__init__(nombre, cant_vehiculos)
+        self.tipo_edificio = "INT"
 
-class EdificioTercero(Edificio):
-    pass
+    def _agregar_a_cola_de_espera(self, v: Vehiculo):
+        if v not in self.cola_de_espera and v not in self.cola_de_carga:
+            logger.debug(f"{v}: agregando a cola de espera")
+            self.cola_de_espera.append(v)
+
+            # ordenar en orden descendente así seguimos sacando
+            # el primer valor siempre
+            logger.debug(f"{v}: reordenando cola de espera")
+            self.cola_de_espera.sort(key=lambda v: v.prioridad, reverse=True)
+            logger.debug(f"{v}: {self.cola_de_espera=}")

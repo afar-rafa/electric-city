@@ -45,7 +45,7 @@ class DB:
         nombre: str,
     ):
         with open(nombre, newline="") as csvfile:
-            spamreader = csv.reader(
+            spamreader = csv.DictReader(
                 csvfile, delimiter=CSV_DELIMITER, quotechar=CSV_QUOTECHAR
             )
             for row in spamreader:

@@ -25,6 +25,7 @@ class Vehiculo:
         self.edificio = None
         self.en_el_edificio = True
         self.necesita_carga = None
+        self.tiempo_en_espera = 0
 
         # obtener salidas para el dia
         self.salidas = salidas_random(
@@ -61,7 +62,19 @@ class Vehiculo:
         self.bateria -= gasto
 
         # que no baje de 0
-        self.bateria = max(self.bateria, -5)
+        self.bateria = max(self.bateria, 0)
+
+    @property
+    def prioridad(self) -> float:
+        """
+        valor a usar al ordenar los vehiculos en un edificio
+        """
+        t = self.tiempo_en_espera / 60
+        b = self.bateria / self.max_bateria or 0.01  # to not have division by zeros
+        prioridad = t / 2 / b
+
+        logger.info(f"{self.edificio}: {self} - {prioridad=:.3f} [{t/2=:.2f} {b=:.2f}]")
+        return prioridad
 
     @property
     def gasto_sgte_salida(self) -> float:
@@ -90,9 +103,12 @@ class Vehiculo:
         Carga la energia indicada.
         Si sobrepasa lo que aguanta la bateria, deja el valor de la bateria
         """
+        self.tiempo_en_espera = 0
         self.bateria += energia
         self.bateria = min(self.bateria, self.max_bateria)
-        logger.info(f"{self} carga energia [bateria={self.bateria:.2f}]")
+        logger.info(
+            f"{self.edificio}: {self} carga energia [bateria={self.bateria:.2f}]"
+        )
 
     def actualizar_status(self, t: datetime.time) -> None:
         """
@@ -101,6 +117,9 @@ class Vehiculo:
         """
         # Revisar si tiene suficiente para su siguiente viaje
         self.necesita_carga = self.necesita_cargarse
+
+        # agrega tiempo en espera de cada ciclo
+        self.tiempo_en_espera += c.MINS_POR_CICLO
 
         # Revisar si está en el edificio
         salida, llegada = self.salidas[self.siguiente_salida]
@@ -118,7 +137,7 @@ class Vehiculo:
             self.en_el_edificio = False
             return
 
-        logger.info(f"{self}: esta dentro de {self.edificio}")
+        logger.debug(f"{self}: esta dentro de {self.edificio}")
         self.en_el_edificio = True
 
     ############################################################

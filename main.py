@@ -1,7 +1,4 @@
 import logging
-import random
-
-import numpy as np
 
 from classes.simulacion import Simulacion
 from helpers.constants import LOG_LEVEL
@@ -13,13 +10,9 @@ logging.basicConfig(
 POTENCIAS_CSV = "potencia_consumida.csv"
 
 # Esto es para repetir la misma ejecución random
-SEED = 2
-np.random.seed(SEED)
-random.seed(SEED)
-
 s = Simulacion(
     "Super City",
-    vehiculos_por_edificio=7,
+    vehiculos_por_edificio=3,
     archivo_potencias=POTENCIAS_CSV,
 )
 

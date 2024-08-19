@@ -1,8 +1,9 @@
 import logging
 from typing import List
 
+import helpers.constants as c
 from classes.database import DB
-from classes.edificio import Edificio, EdificioFIFO
+from classes.edificio import Edificio
 from classes.timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -30,13 +31,21 @@ class Simulacion:
             raise ValueError(f"Cantidad invalida de edificios [{csv_edificios=}]")
 
         # crear los efificios con sus respectivos vehiculos
-        self.edificios: List[Edificio] = [
-            EdificioFIFO(
+        self.edificios: List[Edificio] = []
+        for e in csv_edificios:
+            edificio = Edificio(
                 nombre=e,
                 cant_vehiculos=vehiculos_por_edificio,
             )
-            for e in csv_edificios
-        ]
+            if c.SIMULAR_FIFO:
+                self.edificios.append(
+                    edificio.copia_FIFO(),
+                )
+
+            if c.SIMULAR_INTELIGENTE:
+                self.edificios.append(
+                    edificio.copia_Inteligente(),
+                )
 
     def empezar(self):
         # Crea los archivos para cada edificio
@@ -49,16 +58,15 @@ class Simulacion:
                 logger.info(f"{e} - {v}: salidas={v.salidas_str}")
 
         # Inicia la simulacion
-        for tiempo, *consumos in self.db.leer_csv("potencia_consumida.csv"):
+        for rows in self.db.leer_csv("potencia_consumida.csv"):
             # saltar los headers
-            if tiempo == "Tiempo":
-                continue
+            logger.info(f"Simulacion: {rows=}")
 
-            t = self.timer.set_hh_mm(tiempo)
+            t = self.timer.set_hh_mm(rows["Tiempo"])
             logger.info(f"Simulacion: t={t.strftime('%H:%M')}")
 
             for i, e in enumerate(self.edificios):
-                e.simular_ciclo(t, consumo=consumos[i])
+                e.simular_ciclo(t, consumo=rows[e.nombre])
 
                 # exportar el minuto actual a un .csv
                 self.db.guardar_estado_de_edificio(

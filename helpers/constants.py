@@ -1,12 +1,22 @@
 import math
+import random
+
+import numpy as np
 
 # ------------------- Constantes Simulacion -------------------
 # Tiempo en minutos que avanza entre cada ciclo de tiempo
 MINS_POR_CICLO = 15
 LOG_LEVEL = "INFO"
+SIMULAR_FIFO = True
+SIMULAR_INTELIGENTE = True
+
+# Cambiar seed para obtener otra simulación aleatoria
+SEED = 20
+np.random.seed(SEED)
+random.seed(SEED)
 
 # ------------------- Constantes Edificios --------------------
-MAX_VEHICULOS_EN_CARGA = 3
+MAX_VEHICULOS_EN_CARGA = 3  # (Opcional)
 POTENCIA_DECLARADA = 250000  # KW
 POTENCIA_CARGADORES = 7  # KWh
 
