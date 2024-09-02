@@ -1,7 +1,8 @@
 import copy
 import datetime
 import logging
-from typing import List
+from random import randrange
+from typing import List, Optional
 
 import numpy as np
 
@@ -31,7 +32,7 @@ class Edificio:
     def __init__(
         self,
         nombre: str,
-        cant_vehiculos: int,
+        cant_vehiculos: Optional[int],
     ):
         self.nombre = nombre
         self.tipo_edificio = ""  # FIFO/Inteligente/Otro
@@ -51,7 +52,10 @@ class Edificio:
 
         # crear vehiculos
         self.vehiculos: List[Vehiculo] = []
-        for i in range(cant_vehiculos):
+
+        # si no se especifican, toma una cant al azar
+        cant_v = cant_vehiculos or randrange(1, self.tope_vehiculos + 1)
+        for i in range(cant_v):
             # crear un nuevo vehiculo
             v = Vehiculo(f"Vehiculo {i + 1}")
 
@@ -60,6 +64,15 @@ class Edificio:
 
             # y agregarlo a la lista de vehiculos
             self.vehiculos.append(v)
+
+    @property
+    def tope_vehiculos(self):
+        """
+        Cada edificio debe crear una cantidad random de vehículos:
+
+        Máximo: 70% * (P. declarada / P. cargadores)
+        """
+        return int(self.potencia_declarada / self.potencia_cargadores * 0.7)
 
     def actualizar_potencia_disponble(self, consumo: str) -> None:
         """

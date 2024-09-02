@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import helpers.constants as c
 from classes.database import DB
@@ -13,7 +13,7 @@ class Simulacion:
     def __init__(
         self,
         nombre: str,
-        vehiculos_por_edificio: int,
+        vehiculos_por_edificio: Optional[int],
         archivo_potencias: str,
     ):
         self.nombre = nombre

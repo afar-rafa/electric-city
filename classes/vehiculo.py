@@ -3,7 +3,7 @@ import logging
 
 import helpers.constants as c
 from classes.timer import Timer
-from helpers.utils import get_rand_normal, salidas_random
+from helpers.utils import get_rand_normal, get_rand_time, salidas_random
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +28,15 @@ class Vehiculo:
         self.tiempo_en_espera = 0
 
         # obtener salidas para el dia
+        # 7:30 +/- 45 mins
+        primera_salida = get_rand_time(Timer.new_time("07:30"))
+        # 9:00 +/- 45 mins
+        ultimo_regreso = get_rand_time(Timer.new_time("21:00"))
+        # Salidas entre ambos tiempos
         self.salidas = salidas_random(
             cant=c.CANT_SALIDAS,
-            desde=Timer.new_time("09:00"),
-            hasta=Timer.new_time("21:00"),
+            desde=primera_salida,
+            hasta=ultimo_regreso,
         )
         self.siguiente_salida = 0  # indice
 

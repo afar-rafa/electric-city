@@ -1,9 +1,7 @@
 import csv
-import datetime
 import logging
 from typing import List
 
-import numpy as np
 
 CSV_DELIMITER = "\t"
 CSV_QUOTECHAR = '"'

@@ -26,6 +26,19 @@ def get_rand_normal(mean: int, d_est: int) -> float:
         )
     )
 
+def get_rand_time(t: datetime.datetime) -> datetime.datetime:
+    """
+    Retorna el tiempo t +/- un multiplo al azar de 15 mins
+    """
+    # valores entre [-3 y 3]
+    delta = int(
+        np.round(
+            np.random.normal(0, 1),
+            decimals=0,
+        )
+    )
+    return t + (delta * MINS_POR_CICLO)
+
 
 def get_hh_mm_time(timestamp: str, dia: int) -> datetime.datetime:
     """
@@ -77,5 +90,11 @@ def salidas_random(
         [desde + datetime.timedelta(minutes=m * MINS_POR_CICLO) for m in eventos],
     )
 
-    # devolverlos en tuplas de (salida, llegada)
-    return [(times[i], times[i + 1]) for i in range(0, len(times), 2)]
+    # tuplas de (salida, llegada)
+    salidas = []
+    for i in range(0, len(times), 2):
+        salidas.append(
+            (times[i], times[i + 1]),
+        )
+
+    return salidas
