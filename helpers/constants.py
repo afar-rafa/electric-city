@@ -1,9 +1,17 @@
 import math
+import os
 import random
+import sys
 
 import numpy as np
 
 # ------------------- Constantes Simulacion -------------------
+# Obtener la carpeta en donde se ejecutó main.py
+script_path = os.path.abspath(sys.argv[0])
+script_dir = os.path.dirname(script_path)
+# usar la carpeta para encontrar el input
+POTENCIAS_CSV = f"{script_dir}/potencia_consumida.csv"
+
 # Tiempo en minutos que avanza entre cada ciclo de tiempo
 MINS_POR_CICLO = 15
 LOG_LEVEL = "INFO"
