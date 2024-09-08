@@ -16,11 +16,15 @@ np.random.seed(SEED)
 random.seed(SEED)
 
 # ------------------- Constantes Edificios --------------------
-MAX_VEHICULOS_EN_CARGA = 3  # (Opcional)
-POTENCIA_DECLARADA = 250000  # KW
+VEHICULOS_POR_EDIFICIO = 4
+MAX_VEHICULOS_EN_CARGA = 1  # (Opcional)
+POTENCIA_DECLARADA = 25000  # KW * 10%
 POTENCIA_CARGADORES = 7  # KWh
+TOPE_TIEMPO_DE_MANEJO = 3 * 60 # 3 horas max manejando por viaje
+# HORARIO_DE_FALLA = ('15:00', '20:00')
 
 # ------------------- Constantes Vehiculos --------------------
+CANT_SALIDAS = 3
 # AVG de autos
 MAX_BATERIA_AVG = 82.3  # kWh
 MAX_BATERIA_STD = math.sqrt(28.67)  # kWh
@@ -28,6 +32,5 @@ RENDIMIENTO_AVG = 5.97  # km/kWh
 RENDIMIENTO_STD = math.sqrt(1.16)  # km/kWh
 
 # TODO: Falta logica para estas variables
-CANT_SALIDAS = 3
 # MIN_SALIDAS = 1
 # MAX_SALIDAS = 3

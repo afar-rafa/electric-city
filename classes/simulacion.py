@@ -13,7 +13,6 @@ class Simulacion:
     def __init__(
         self,
         nombre: str,
-        vehiculos_por_edificio: Optional[int],
         archivo_potencias: str,
     ):
         self.nombre = nombre
@@ -35,7 +34,6 @@ class Simulacion:
         for e in csv_edificios:
             edificio = Edificio(
                 nombre=e,
-                cant_vehiculos=vehiculos_por_edificio,
             )
             if c.SIMULAR_FIFO:
                 self.edificios.append(
@@ -58,7 +56,7 @@ class Simulacion:
                 logger.info(f"{e} - {v}: salidas={v.salidas_str}")
 
         # Inicia la simulacion
-        for rows in self.db.leer_csv("potencia_consumida.csv"):
+        for rows in self.db.leer_csv(c.POTENCIAS_CSV):
             # saltar los headers
             logger.info(f"Simulacion: {rows=}")
 

@@ -12,7 +12,6 @@ POTENCIAS_CSV = "potencia_consumida.csv"
 # Esto es para repetir la misma ejecución random
 s = Simulacion(
     "Super City",
-    vehiculos_por_edificio=3,
     archivo_potencias=POTENCIAS_CSV,
 )
 

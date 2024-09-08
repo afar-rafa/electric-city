@@ -3,7 +3,7 @@ import logging
 
 import helpers.constants as c
 from classes.timer import Timer
-from helpers.utils import get_rand_normal, get_rand_time, salidas_random
+from helpers.utils import distancia_en_minutos, get_rand_normal, get_rand_time, salidas_random
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,18 @@ class Vehiculo:
         # que no baje de 0
         self.bateria = max(self.bateria, 0)
 
+    # @property
+    # def prioridad(self) -> float:
+    #     """
+    #     valor a usar al ordenar los vehiculos en un edificio
+    #     """
+    #     t = self.tiempo_en_espera / 60
+    #     b = self.bateria / self.max_bateria or 0.01  # to not have division by zeros
+    #     prioridad = t / 2 / b
+
+    #     logger.info(f"{self.edificio}: {self} - {prioridad=:.3f} [{t/2=:.2f} {b=:.2f}]")
+    #     return prioridad
+    
     @property
     def prioridad(self) -> float:
         """
@@ -81,12 +93,48 @@ class Vehiculo:
         logger.info(f"{self.edificio}: {self} - {prioridad=:.3f} [{t/2=:.2f} {b=:.2f}]")
         return prioridad
 
+    def gasto_de_viaje(self, t_inicio: datetime.datetime, t_final: datetime.datetime) -> float:
+        total_minutos = (t_final - t_inicio).total_seconds() / 60
+        total_minutos = min(total_minutos, c.TOPE_TIEMPO_DE_MANEJO) # limitar las horas de viaje
+
+        return self.consumo_de_viaje(
+            self.velocidad_promedio, minutos=total_minutos
+        )
+
     @property
     def gasto_sgte_salida(self) -> float:
         salida, llegada = self.salidas[self.siguiente_salida]
-        return self.consumo_de_viaje(
-            self.velocidad_promedio, minutos=(llegada - salida).total_seconds() / 60
-        )
+        return self.gasto_de_viaje(salida, llegada)
+    
+    @property
+    def gasto_restante_dia(self) -> float:
+        """
+        Total de viajes que le quedan en el día
+        """
+        gasto = 0
+        salidas_restantes = self.salidas[self.siguiente_salida:]
+        logger.info(f"{self.edificio}: {self} - Revisando salidas restantes {salidas_restantes}")
+
+        for s in salidas_restantes:
+                gasto += self.gasto_de_viaje(s[0], s[1])
+
+        logger.info(f"{self.edificio}: {self} - Gasto calculado [{gasto=}]")
+        return gasto
+
+    def esta_manejando(self, t: datetime.time) -> bool:
+        salida, llegada = self.salidas[self.siguiente_salida]
+
+        # si el viaje dura menos de 3 horas, linealmente
+        if distancia_en_minutos(salida, llegada) < c.TOPE_TIEMPO_DE_MANEJO:
+            return True
+        
+        elif t <= salida + datetime.timedelta(hours=1, minutes=30):
+            return True
+        
+        elif t >= llegada - datetime.timedelta(hours=1, minutes=30):
+            return True
+    
+        return False
 
     @property
     def necesita_cargarse(self) -> bool:

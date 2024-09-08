@@ -24,7 +24,6 @@ class Edificio:
     ```
     b = Edificio(
         nombre="Edificio FIFO",
-        cant_vehiculos=10,
     )
     ```
     """
@@ -32,7 +31,6 @@ class Edificio:
     def __init__(
         self,
         nombre: str,
-        cant_vehiculos: Optional[int],
     ):
         self.nombre = nombre
         self.tipo_edificio = ""  # FIFO/Inteligente/Otro
@@ -54,7 +52,7 @@ class Edificio:
         self.vehiculos: List[Vehiculo] = []
 
         # si no se especifican, toma una cant al azar
-        cant_v = cant_vehiculos or randrange(1, self.tope_vehiculos + 1)
+        cant_v = c.VEHICULOS_POR_EDIFICIO or randrange(1, self.tope_vehiculos + 1)
         for i in range(cant_v):
             # crear un nuevo vehiculo
             v = Vehiculo(f"Vehiculo {i + 1}")
@@ -215,7 +213,9 @@ class Edificio:
                 # sacarlo de las colas
                 self.sacar_de_cola_de_espera(v)
                 self.sacar_de_cola_de_carga(v)
-                v.viajar()
+
+                if v.esta_manejando(t):
+                    v.viajar()
 
             # si esta en el edificio, cargarlo si es necesario
             else:

@@ -37,7 +37,7 @@ def get_rand_time(t: datetime.datetime) -> datetime.datetime:
             decimals=0,
         )
     )
-    return t + (delta * MINS_POR_CICLO)
+    return t + datetime.timedelta(minutes=delta * MINS_POR_CICLO)
 
 
 def get_hh_mm_time(timestamp: str, dia: int) -> datetime.datetime:
