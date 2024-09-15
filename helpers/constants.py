@@ -31,7 +31,7 @@ random.seed(SEED)
 # ------------------- Constantes Edificios --------------------
 VEHICULOS_POR_EDIFICIO = int(config.get("VEHICULOS_POR_EDIFICIO", 4))
 MAX_VEHICULOS_EN_CARGA = int(config.get("MAX_VEHICULOS_EN_CARGA", 1))
-POTENCIA_DECLARADA = int(config.get("POTENCIA_DECLARADA", 25000))
+POTENCIA_DECLARADA = int(float(config.get("POTENCIA_DECLARADA", 25000)))
 POTENCIA_CARGADORES = int(config.get("POTENCIA_CARGADORES", 7))
 TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))
 

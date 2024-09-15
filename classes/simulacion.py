@@ -41,8 +41,12 @@ class Simulacion:
                 )
 
             if c.SIMULAR_INTELIGENTE:
-                self.edificios.append(
-                    edificio.copia_Inteligente(),
+                e = edificio.copia_Inteligente()
+                self.edificios.append(e)
+
+                self.db.crear_csv(
+                    name=f"Prioridades {e}.csv",
+                    headers=["Tiempo"] + [f"{v}" for v in e.vehiculos],
                 )
 
     def empezar(self):
@@ -58,13 +62,14 @@ class Simulacion:
         # Inicia la simulacion
         for rows in self.db.leer_csv(c.POTENCIAS_CSV):
             # saltar los headers
-            logger.info(f"Simulacion: {rows=}")
 
             t = self.timer.set_hh_mm(rows["Tiempo"])
-            logger.info(f"Simulacion: t={t.strftime('%H:%M')}")
 
             for i, e in enumerate(self.edificios):
-                e.simular_ciclo(t, consumo=rows[e.nombre])
+                e.simular_ciclo(
+                    t,
+                    porcentaje_consumo=rows[e.nombre],
+                )
 
                 # exportar el minuto actual a un .csv
                 self.db.guardar_estado_de_edificio(

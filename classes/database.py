@@ -2,6 +2,8 @@ import csv
 import logging
 from typing import List
 
+from classes.edificio import Edificio
+
 
 CSV_DELIMITER = "\t"
 CSV_QUOTECHAR = '"'
@@ -67,8 +69,12 @@ class DB:
             for e in edificios
         ]
 
-    def guardar_estado_de_edificio(self, tiempo: str, edificio: "Edificio"):  # type: ignore
+    def guardar_estado_de_edificio(self, tiempo: str, edificio: Edificio):
         fila = [tiempo, edificio.potencia_disponble] + edificio.bateria_de_vehiculos
 
         logger.info("Simulacion: %s", fila)
         self.agregar_a_csv(nombre=f"{edificio}.csv", fila=fila)
+
+        if edificio.tipo_edificio == Edificio.TIPO_INT:
+            fila = [tiempo] + edificio.prioridad_de_vehiculos
+            self.agregar_a_csv(nombre=f"Prioridades {edificio}.csv", fila=fila)

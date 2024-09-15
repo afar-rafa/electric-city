@@ -28,6 +28,9 @@ class Edificio:
     ```
     """
 
+    TIPO_FIFO = "FIFO"
+    TIPO_INT = "INT"
+
     def __init__(
         self,
         nombre: str,
@@ -79,11 +82,13 @@ class Edificio:
 
         Se asigna al edificio actual en cada ciclo de tiempo
         """
-        consumo = float(consumo)
-        logger.debug(
-            f"{self}: actualizando potencia [declarada={self.potencia_declarada}, {consumo=}]"
-        )
         self.potencia_disponble = max(self.potencia_declarada - consumo, 0)
+        logger.info(
+            f"{self}: actualizando potencia "
+            f"[declarada={self.potencia_declarada}, "
+            f"{consumo=}, "
+            f"disponible={self.potencia_disponble}]"
+        )
 
     ############################################################
     # Transformaciones
@@ -93,13 +98,13 @@ class Edificio:
     def copia_FIFO(self):
         e = copy.deepcopy(self)
         e.__class__ = EdificioFIFO
-        e.tipo_edificio = "FIFO"
+        e.tipo_edificio = self.TIPO_FIFO
         return e
 
     def copia_Inteligente(self):
         e = copy.deepcopy(self)
         e.__class__ = EdificioInteligente
-        e.tipo_edificio = "INT"
+        e.tipo_edificio = self.TIPO_INT
         return e
 
     ############################################################
@@ -119,7 +124,7 @@ class Edificio:
 
         # luego los que no estan a full
         for v in [v for v in autos_a_cargar if not v.necesita_carga]:
-            logger.info(
+            logger.debug(
                 f"%s: {v} - no esta a full [{v.bateria:.2f} < {v.max_bateria:.2f}]",
                 self,
             )
@@ -147,7 +152,7 @@ class Edificio:
             self.agregar_a_cola_de_carga(
                 self.siguiente_en_cola_de_espera(),
             )
-        logger.info(f"%s: actualizada {self.cola_de_carga=}", self)
+        logger.debug(f"%s: actualizada {self.cola_de_carga=}", self)
 
     def limpiar_cola_de_carga(self):
         """
@@ -190,14 +195,22 @@ class Edificio:
     def bateria_de_vehiculos(self):
         return [float(np.round(v.bateria, 2)) for v in self.vehiculos]
 
+    @property
+    def prioridad_de_vehiculos(self):
+        return [float(np.round(v.prioridad, 2)) for v in self.vehiculos]
+
     ############################################################
     # Simular paso del tiempo
     ############################################################
     def simular_ciclo(
         self,
         t: datetime.time,
-        consumo: str,
+        porcentaje_consumo: str,
     ):
+        logger.info(f"{self}: {t=} {porcentaje_consumo=}")
+        consumo = c.POTENCIA_DECLARADA * (float(porcentaje_consumo) / 100)
+        logger.info(f"{self}: {t=} {consumo=}")
+
         self.actualizar_potencia_disponble(consumo)
 
         # los esto es para separar aquellos que necesitan carga para
@@ -227,7 +240,7 @@ class Edificio:
         logger.debug(f"%s: {autos_a_cargar=}", self)
         self.agregar_a_cola_de_espera(autos_a_cargar)
 
-        logger.info(f"%s: {self.cola_de_espera=}", self)
+        logger.debug(f"%s: {self.cola_de_espera=}", self)
 
         # agregar vehiculos a cola de carga si se puede
         self.actualizar_cola_de_carga()
@@ -255,7 +268,7 @@ class EdificioFIFO(Edificio):
 
     def __init__(self, nombre: str, cant_vehiculos: int):
         super().__init__(nombre, cant_vehiculos)
-        self.tipo_edificio = "FIFO"
+        self.tipo_edificio = self.TIPO_FIFO
 
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
         if v not in self.cola_de_espera and v not in self.cola_de_carga:
@@ -274,7 +287,7 @@ class EdificioInteligente(Edificio):
 
     def __init__(self, nombre: str, cant_vehiculos: int):
         super().__init__(nombre, cant_vehiculos)
-        self.tipo_edificio = "INT"
+        self.tipo_edificio = self.TIPO_INT
 
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
         if v not in self.cola_de_espera and v not in self.cola_de_carga:
