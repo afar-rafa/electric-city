@@ -2,6 +2,7 @@ import datetime
 import logging
 import math
 from random import randrange
+from typing import List, Tuple
 
 import helpers.constants as c
 from classes.timer import Timer
@@ -35,17 +36,27 @@ class Vehiculo:
         self.tiempo_en_espera = 0
 
         # obtener salidas para el dia
-        primera_salida = get_rand_time(Timer.new_time(c.HORA_PRIMERA_SALIDA))
-        ultimo_regreso = get_rand_time(Timer.new_time(c.HORA_ULTIMO_REGRESO))
+        t = Timer()
+        primera_salida = get_rand_time(t.new_time(c.HORA_PRIMERA_SALIDA))
+        ultimo_regreso = get_rand_time(t.new_time(c.HORA_ULTIMO_REGRESO))
 
-        cant_salidas = 3
         if c.MIN_SALIDAS and c.MAX_SALIDAS and c.MIN_SALIDAS <= c.MAX_SALIDAS:
             cant_salidas = randrange(c.MIN_SALIDAS, c.MAX_SALIDAS + 1)
+            logger.warning(
+                f"{self.edificio} - {self}: Usando cant de salidas seteada de {cant_salidas}"
+            )
+        else:
+            cant_salidas = c.CANT_SALIDAS
+            logger.warning(
+                f"{self.edificio} - {self}: Usando cant de salidas default de {cant_salidas}"
+            )
 
-        self.salidas = salidas_random(
-            cant=cant_salidas,
-            desde=primera_salida,
-            hasta=ultimo_regreso,
+        self.salidas: List[Tuple[datetime.datetime, datetime.datetime]] = (
+            salidas_random(
+                cant=cant_salidas,
+                desde=primera_salida,
+                hasta=ultimo_regreso,
+            )
         )
         self.siguiente_salida = 0  # indice
 
@@ -61,12 +72,12 @@ class Vehiculo:
         # rendimiento (KM/KWh) y equivalente en consumo (KWh/KM)
         std_r = math.sqrt(c.VAR_RENDIMIENTO)
         self.rendimiento = get_rand_normal(c.AVG_RENDIMIENTO, std_r)
-        self.consumo = 1 / self.rendimiento
 
-        self.velocidad_promedio = 50  # KM/h
+        self.velocidad_promedio = c.VELOCIDAD_PROMEDIO
 
     def consumo_de_viaje(self, velocidad: int, minutos: int) -> float:
-        return self.consumo * velocidad * minutos / 60  # KW/min
+        distancia = velocidad * minutos / 60  # km
+        return distancia / self.rendimiento  # km / km/kWh = kWh
 
     def viajar(self):
         """
@@ -88,7 +99,7 @@ class Vehiculo:
         prioridad = self.gasto_restante_dia - self.bateria
 
         logger.info(
-            f"{self.edificio}: {self} -- g={self.gasto_restante_dia:.2f} - b={self.bateria:.2f} = p={prioridad:.2f}"
+            f"{self.edificio} - {self}: [gasto_restante={self.gasto_restante_dia:.1f} - bateria={self.bateria:.1f} = prioridad={prioridad:.1f}]"
         )
         return prioridad
 
@@ -127,18 +138,23 @@ class Vehiculo:
 
     def esta_manejando(self, t: datetime.time) -> bool:
         salida, llegada = self.salidas[self.siguiente_salida]
+        distancia_t = distancia_en_minutos(salida, llegada)
 
-        # si el viaje dura menos de 3 horas, linealmente
-        if distancia_en_minutos(salida, llegada) < c.TOPE_TIEMPO_DE_MANEJO:
-            return True
+        logger.info(
+            f"{self.edificio}: {self} - "
+            f"esta_manejando [salida={salida.strftime('%H:%M')}, llegada={llegada.strftime('%H:%M')}, {distancia_t=}]"
+        )
 
-        elif t <= salida + datetime.timedelta(hours=1, minutes=30):
-            return True
+        # si el viaje dura 3 horas o menos, linealmente
+        if c.TOPE_TIEMPO_DE_MANEJO <= distancia_t:
+            tope_de_manejo = datetime.timedelta(minutes=c.TOPE_TIEMPO_DE_MANEJO / 2)
 
-        elif t >= llegada - datetime.timedelta(hours=1, minutes=30):
-            return True
+            if salida + tope_de_manejo <= t <= llegada - tope_de_manejo:
+                logger.info(f"{self.edificio}: {self} - no esta_manejando [False]")
+                return False
 
-        return False
+        logger.info(f"{self.edificio}: {self} - esta_manejando [True]")
+        return True
 
     @property
     def necesita_cargarse(self) -> bool:
@@ -167,7 +183,7 @@ class Vehiculo:
             f"{self.edificio}: {self} carga energia [bateria={self.bateria:.2f}]"
         )
 
-    def actualizar_status(self, t: datetime.time) -> None:
+    def actualizar_status(self, t: datetime.datetime) -> None:
         """
         self.necesita_carga:  si tiene suficiente para su sgte viaje
         self.en_el_edificio:  si esta en el edificio en el tiempo t
@@ -180,14 +196,22 @@ class Vehiculo:
 
         # Revisar si está en el edificio
         salida, llegada = self.salidas[self.siguiente_salida]
+        s = salida.time()
+        l = llegada.time()
+        t_t = t.time()
         logger.debug(
-            f"{self}: actualizar_status {salida.strftime('%H:%M')} <= {t.strftime('%H:%M')} <= {llegada.strftime('%H:%M')} = {salida <= t <= llegada}"
+            f"%s: actualizar_status %s <= %s <= %s = %s",
+            self,
+            s.strftime("%H:%M"),
+            t_t.strftime("%H:%M"),
+            l.strftime("%H:%M"),
+            s <= t_t <= l,
         )
 
-        if salida <= t <= llegada:
+        if s <= t_t <= l:
             logger.info(f"{self}: esta fuera de {self.edificio}")
 
-            if t == llegada:
+            if t_t == l:
                 self.siguiente_salida = (self.siguiente_salida + 1) % len(self.salidas)
                 logger.info(f"{self}: {self.siguiente_salida=}")
 

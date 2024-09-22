@@ -56,7 +56,7 @@ class Simulacion:
         # mostrar datos de cada vehiculo en los edificios
         for e in self.edificios:
             for v in e.vehiculos:
-                logger.info(f"{e} - {v}: {v.max_bateria=}")
+                logger.info(f"{e} - {v}: {v.max_bateria=}, {v.bateria=}")
                 logger.info(f"{e} - {v}: salidas={v.salidas_str}")
 
         # Inicia la simulacion

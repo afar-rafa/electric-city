@@ -6,6 +6,7 @@ from typing import List, Optional
 
 import numpy as np
 
+from classes.timer import Timer
 import helpers.constants as c
 from classes.vehiculo import Vehiculo
 
@@ -44,7 +45,7 @@ class Edificio:
         # potencia de los cargadores de Vehiculos
         self.potencia_cargadores = c.POTENCIA_CARGADORES
 
-        # potencia disponible, calculada en todo momento
+        # potencia disponible, calculada durante la simulacion
         self.potencia_disponble: float | None = None
 
         # colas de vehiculos
@@ -75,18 +76,38 @@ class Edificio:
         """
         return int(self.potencia_declarada / self.potencia_cargadores * 0.7)
 
-    def actualizar_potencia_disponble(self, consumo: str) -> None:
+    def actualizar_potencia_disponble(
+        self,
+        t: datetime.datetime,
+        porcentaje_consumo: str,
+    ) -> None:
         """
         potencia disponble = potencia maxima - consumo
         (no puede ser negativa)
 
         Se asigna al edificio actual en cada ciclo de tiempo
         """
+        # si es un periodo de falla, reducir la potencia,
+        # si no, basarse en la potencia declarada y consumida
+        if c.HAY_FALLA and Timer().time_in_range(
+            t, c.INICIO_HORARIO_FALLA, c.FINAL_HORARIO_FALLA
+        ):
+            consumo = c.POTENCIA_DECLARADA * c.REDUCCION_EN_FALLA
+            logger.info(
+                f"{self}: t={t.strftime('%H:%M')} {consumo=} (Horario de Falla)"
+            )
+        else:
+            p_consumo = float(porcentaje_consumo) / 100
+            consumo = max(  # permitir siempre un minimo de potencia si esta existe
+                c.POTENCIA_DECLARADA * p_consumo, c.POT_DISPONIBLE_MINIMA
+            )
+            logger.debug(f"{self}: t={t.strftime('%H:%M')} {consumo=}")
+
         self.potencia_disponble = max(self.potencia_declarada - consumo, 0)
         logger.info(
             f"{self}: actualizando potencia "
             f"[declarada={self.potencia_declarada}, "
-            f"{consumo=}, "
+            f"{consumo=:.1f}, "
             f"disponible={self.potencia_disponble}]"
         )
 
@@ -204,14 +225,12 @@ class Edificio:
     ############################################################
     def simular_ciclo(
         self,
-        t: datetime.time,
+        t: datetime.datetime,
         porcentaje_consumo: str,
     ):
-        logger.info(f"{self}: {t=} {porcentaje_consumo=}")
-        consumo = c.POTENCIA_DECLARADA * (float(porcentaje_consumo) / 100)
-        logger.info(f"{self}: {t=} {consumo=}")
+        logger.debug(f"{self}: t={t.strftime('%H:%M')} {porcentaje_consumo=}")
 
-        self.actualizar_potencia_disponble(consumo)
+        self.actualizar_potencia_disponble(t, porcentaje_consumo)
 
         # los esto es para separar aquellos que necesitan carga para
         # su siguiente viaje y aquellos que solo no están a 100%
@@ -251,7 +270,7 @@ class Edificio:
         # sacar los que quedaron ok
         self.limpiar_cola_de_carga()
 
-        logger.info(f"{self}: finalmente {self.cola_de_carga=}")
+        logger.debug(f"{self}: finalmente {self.cola_de_carga=}")
 
     ############################################################
     # Helper tools

@@ -18,15 +18,18 @@ class Timer:
         self.fecha_actual = datetime.date.today()
         self.tiempo_actual = None
 
+    @staticmethod
+    def str_to_time(t_str: str) -> datetime.datetime:
+        return datetime.datetime.strptime(t_str, "%H:%M")
+
     def new_time(self, time_str: str) -> datetime.datetime:
         """
         Crea instancias de datetime a partir de un string "HH:MM"
         y la fecha actual
         """
-        h, m = (int(i) for i in time_str.split(":"))
         return datetime.datetime.combine(
             self.fecha_actual,
-            datetime.time(hour=h, minute=m),
+            self.str_to_time(time_str).time(),
         )
 
     @staticmethod
@@ -48,10 +51,7 @@ class Timer:
             logger.debug(f"Timer: new day -> {self.fecha_actual.strftime('%y-%m-%d')}")
 
         # transform time_str into datetime
-        t = datetime.datetime.combine(
-            self.fecha_actual,
-            datetime.time(*[int(i) for i in time_str.split(":")]),
-        )
+        t = self.new_time(time_str)
 
         # save the time and return it
         self.tiempo_actual = t
@@ -63,3 +63,22 @@ class Timer:
             self.tiempo_actual,
             "%Y-%m-%d %H:%M",
         )
+
+    def time_in_range(
+        self,
+        t: datetime,
+        t_0: str,
+        t_f: str,
+    ) -> bool:
+        current_time = t.time()
+
+        # obtener tiempos inicial y final
+        t_0_time = self.str_to_time(t_0).time()
+        t_f_time = self.str_to_time(t_f).time()
+
+        # Caso 1: Horas en el mismo dia
+        if t_0_time <= t_f_time:
+            return t_0_time <= current_time <= t_f_time
+        # Caso 2: Horas de un dia al siguiente
+        else:
+            return current_time >= t_0_time or current_time <= t_f_time

@@ -22,8 +22,8 @@ POTENCIAS_CSV = f"{script_dir}/potencia_consumida.csv"
 MINS_POR_CICLO = int(config.get("MINS_POR_CICLO", 15))
 
 LOG_LEVEL = config.get("LOG_LEVEL", "INFO")
-SIMULAR_FIFO = bool(config.get("SIMULAR_FIFO", True))
-SIMULAR_INTELIGENTE = bool(config.get("SIMULAR_INTELIGENTE", True))
+SIMULAR_FIFO = bool(int(config.get("SIMULAR_FIFO", 1)))
+SIMULAR_INTELIGENTE = bool(int(config.get("SIMULAR_INTELIGENTE", 1)))
 
 # Cambiar seed para obtener otra simulación aleatoria
 SEED = int(config.get("SEED", 0))
@@ -34,20 +34,25 @@ random.seed(SEED)
 VEHICULOS_POR_EDIFICIO = int(config.get("VEHICULOS_POR_EDIFICIO", 4))
 MAX_VEHICULOS_EN_CARGA = int(config.get("MAX_VEHICULOS_EN_CARGA", 1))
 POTENCIA_DECLARADA = int(float(config.get("POTENCIA_DECLARADA", 25000)))
+POT_DISPONIBLE_MINIMA = int(config.get("POT_DISPONIBLE_MINIMA", 30))
 POTENCIA_CARGADORES = int(config.get("POTENCIA_CARGADORES", 7))
 TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))
 
-INICIO_HORARIO_FALLA = config.get("INICIO_HORARIO_FALLA", "15:00")
+# Periodos de falla reducen la potencia disponible a un 10%
+HAY_FALLA = bool(int(config.get("HAY_FALLA", 0)))
+INICIO_HORARIO_FALLA = config.get("INICIO_HORARIO_FALLA", "18:00")
 FINAL_HORARIO_FALLA = config.get("FINAL_HORARIO_FALLA", "20:00")
+REDUCCION_EN_FALLA = float(config.get("REDUCCION_EN_FALLA", 0.1))
 
 # ------------------- Constantes Vehiculos --------------------
+VELOCIDAD_PROMEDIO = config.get("VELOCIDAD_PROMEDIO", 50)  # KM/h
 CANT_SALIDAS = int(config.get("CANT_SALIDAS", 3))
 
 HORA_PRIMERA_SALIDA = "07:30"  # 07:30 +/- 45 mins
 HORA_ULTIMO_REGRESO = "21:00"  # 21:00 +/- 45 mins
 # Cant de salidas entre ambos tiempos
-MIN_SALIDAS = 1
-MAX_SALIDAS = 3
+MIN_SALIDAS = int(config.get("MIN_SALIDAS", 1))
+MAX_SALIDAS = int(config.get("MAX_SALIDAS", 3))
 
 # ----- Promedios y varianzas de valores aleatorios -----
 # Bateria maxima
