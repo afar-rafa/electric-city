@@ -1,9 +1,16 @@
 import datetime
 import logging
+import math
+from random import randrange
 
 import helpers.constants as c
 from classes.timer import Timer
-from helpers.utils import distancia_en_minutos, get_rand_normal, get_rand_time, salidas_random
+from helpers.utils import (
+    distancia_en_minutos,
+    get_rand_normal,
+    get_rand_time,
+    salidas_random,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,28 +35,32 @@ class Vehiculo:
         self.tiempo_en_espera = 0
 
         # obtener salidas para el dia
-        # 7:30 +/- 45 mins
-        primera_salida = get_rand_time(Timer.new_time("07:30"))
-        # 9:00 +/- 45 mins
-        ultimo_regreso = get_rand_time(Timer.new_time("21:00"))
-        # Salidas entre ambos tiempos
+        primera_salida = get_rand_time(Timer.new_time(c.HORA_PRIMERA_SALIDA))
+        ultimo_regreso = get_rand_time(Timer.new_time(c.HORA_ULTIMO_REGRESO))
+
+        cant_salidas = 3
+        if c.MIN_SALIDAS and c.MAX_SALIDAS and c.MIN_SALIDAS <= c.MAX_SALIDAS:
+            cant_salidas = randrange(c.MIN_SALIDAS, c.MAX_SALIDAS + 1)
+
         self.salidas = salidas_random(
-            cant=c.CANT_SALIDAS,
+            cant=cant_salidas,
             desde=primera_salida,
             hasta=ultimo_regreso,
         )
         self.siguiente_salida = 0  # indice
 
         # ------------------------ parametros ------------------------
-        self.max_bateria = get_rand_normal(c.MAX_BATERIA_AVG, c.MAX_BATERIA_STD)
+        std_b_max = math.sqrt(c.VAR_BATERIA_MAX)
+        self.max_bateria = get_rand_normal(c.AVG_BATERIA_MAX, std_b_max)
 
         # Cuanto tiene la bateria inicialmente (y que no sobrepase el limite)
-        self.bateria = get_rand_normal(c.MAX_BATERIA_AVG / 2, c.MAX_BATERIA_STD)
+        std_b_ini = math.sqrt(c.VAR_BATERIA_INI)
+        self.bateria = get_rand_normal(c.AVG_BATERIA_INI, std_b_ini)
         self.bateria = min(self.bateria, self.max_bateria)
 
-        # rendimiento en KM/KWh
-        self.rendimiento = get_rand_normal(c.RENDIMIENTO_AVG, c.RENDIMIENTO_STD)
-        # consumo en KWh/KM
+        # rendimiento (KM/KWh) y equivalente en consumo (KWh/KM)
+        std_r = math.sqrt(c.VAR_RENDIMIENTO)
+        self.rendimiento = get_rand_normal(c.AVG_RENDIMIENTO, std_r)
         self.consumo = 1 / self.rendimiento
 
         self.velocidad_promedio = 50  # KM/h
@@ -69,56 +80,49 @@ class Vehiculo:
         # que no baje de 0
         self.bateria = max(self.bateria, 0)
 
-    # @property
-    # def prioridad(self) -> float:
-    #     """
-    #     valor a usar al ordenar los vehiculos en un edificio
-    #     """
-    #     t = self.tiempo_en_espera / 60
-    #     b = self.bateria / self.max_bateria or 0.01  # to not have division by zeros
-    #     prioridad = t / 2 / b
-
-    #     logger.info(f"{self.edificio}: {self} - {prioridad=:.3f} [{t/2=:.2f} {b=:.2f}]")
-    #     return prioridad
-    
     @property
     def prioridad(self) -> float:
         """
         valor a usar al ordenar los vehiculos en un edificio
         """
-        t = self.tiempo_en_espera / 60
-        b = self.bateria / self.max_bateria or 0.01  # to not have division by zeros
-        prioridad = t / 2 / b
+        prioridad = self.gasto_restante_dia - self.bateria
 
-        logger.info(f"{self.edificio}: {self} - {prioridad=:.3f} [{t/2=:.2f} {b=:.2f}]")
+        logger.info(
+            f"{self.edificio}: {self} -- g={self.gasto_restante_dia:.2f} - b={self.bateria:.2f} = p={prioridad:.2f}"
+        )
         return prioridad
 
-    def gasto_de_viaje(self, t_inicio: datetime.datetime, t_final: datetime.datetime) -> float:
+    def gasto_de_viaje(
+        self,
+        t_inicio: datetime.datetime,
+        t_final: datetime.datetime,
+    ) -> float:
         total_minutos = (t_final - t_inicio).total_seconds() / 60
-        total_minutos = min(total_minutos, c.TOPE_TIEMPO_DE_MANEJO) # limitar las horas de viaje
+        # limitar las horas de viaje
+        total_minutos = min(total_minutos, c.TOPE_TIEMPO_DE_MANEJO)
 
-        return self.consumo_de_viaje(
-            self.velocidad_promedio, minutos=total_minutos
-        )
+        return self.consumo_de_viaje(self.velocidad_promedio, minutos=total_minutos)
 
     @property
     def gasto_sgte_salida(self) -> float:
         salida, llegada = self.salidas[self.siguiente_salida]
         return self.gasto_de_viaje(salida, llegada)
-    
+
     @property
     def gasto_restante_dia(self) -> float:
         """
         Total de viajes que le quedan en el día
         """
         gasto = 0
-        salidas_restantes = self.salidas[self.siguiente_salida:]
-        logger.info(f"{self.edificio}: {self} - Revisando salidas restantes {salidas_restantes}")
+        salidas_restantes = self.salidas[self.siguiente_salida :]
+        logger.debug(
+            f"{self.edificio}: {self} - Revisando salidas restantes {salidas_restantes}"
+        )
 
         for s in salidas_restantes:
-                gasto += self.gasto_de_viaje(s[0], s[1])
+            gasto += self.gasto_de_viaje(s[0], s[1])
 
-        logger.info(f"{self.edificio}: {self} - Gasto calculado [{gasto=}]")
+        logger.debug(f"{self.edificio}: {self} - Gasto calculado [{gasto=}]")
         return gasto
 
     def esta_manejando(self, t: datetime.time) -> bool:
@@ -127,13 +131,13 @@ class Vehiculo:
         # si el viaje dura menos de 3 horas, linealmente
         if distancia_en_minutos(salida, llegada) < c.TOPE_TIEMPO_DE_MANEJO:
             return True
-        
+
         elif t <= salida + datetime.timedelta(hours=1, minutes=30):
             return True
-        
+
         elif t >= llegada - datetime.timedelta(hours=1, minutes=30):
             return True
-    
+
         return False
 
     @property
@@ -159,7 +163,7 @@ class Vehiculo:
         self.tiempo_en_espera = 0
         self.bateria += energia
         self.bateria = min(self.bateria, self.max_bateria)
-        logger.info(
+        logger.debug(
             f"{self.edificio}: {self} carga energia [bateria={self.bateria:.2f}]"
         )
 
