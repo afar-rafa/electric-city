@@ -1,7 +1,7 @@
 """
 TIMER
 
-Este es solo un draft en donde trate de crear una clase que vaya trackeando el paso del tiempo
+Clase que contiene funciones relacionadas al paso del tiempo
 """
 
 import datetime
@@ -18,15 +18,14 @@ class Timer:
         self.fecha_actual = datetime.date.today()
         self.tiempo_actual = None
 
-    @staticmethod
-    def new_time(time_str: str) -> datetime.datetime:
+    def new_time(self, time_str: str) -> datetime.datetime:
         """
         Crea instancias de datetime a partir de un string "HH:MM"
         y la fecha actual
         """
         h, m = (int(i) for i in time_str.split(":"))
         return datetime.datetime.combine(
-            datetime.datetime.now().date(),
+            self.fecha_actual,
             datetime.time(hour=h, minute=m),
         )
 
