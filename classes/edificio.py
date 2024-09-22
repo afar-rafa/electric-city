@@ -193,7 +193,7 @@ class Edificio:
 
     @property
     def bateria_de_vehiculos(self):
-        return [float(np.round(v.bateria, 2)) for v in self.vehiculos]
+        return [float(np.round(v.bateria / v.max_bateria, 2)) for v in self.vehiculos]
 
     @property
     def prioridad_de_vehiculos(self):
