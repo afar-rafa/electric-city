@@ -23,6 +23,7 @@ MINS_POR_CICLO = int(config.get("MINS_POR_CICLO", 15))
 
 LOG_LEVEL = config.get("LOG_LEVEL", "INFO")
 SIMULAR_FIFO = bool(int(config.get("SIMULAR_FIFO", 1)))
+SIMULAR_ROUNDROBBIN = bool(int(config.get("SIMULAR_ROUNDROBBIN", 1)))
 SIMULAR_INTELIGENTE = bool(int(config.get("SIMULAR_INTELIGENTE", 1)))
 
 # Cambiar seed para obtener otra simulación aleatoria

@@ -24,12 +24,13 @@ class Edificio:
 
     ```
     b = Edificio(
-        nombre="Edificio FIFO",
+        nombre="Edificio 1",
     )
     ```
     """
 
     TIPO_FIFO = "FIFO"
+    TIPO_RR = "RoundRobbin"
     TIPO_INT = "INT"
 
     def __init__(
@@ -37,7 +38,7 @@ class Edificio:
         nombre: str,
     ):
         self.nombre = nombre
-        self.tipo_edificio = ""  # FIFO/Inteligente/Otro
+        self.tipo_edificio = ""  # FIFO/RoundRobbin/Inteligente
 
         # Potencia total disponible del edificio
         self.potencia_declarada = c.POTENCIA_DECLARADA
@@ -114,12 +115,19 @@ class Edificio:
     ############################################################
     # Transformaciones
     # Estos metodos retornan una copia del edificio transformado
-    # a un edificioFIFO o EdifocioInteligente
+    # a un FIFO/RoundRobbin/Inteligente
     ############################################################
     def copia_FIFO(self):
         e = copy.deepcopy(self)
         e.__class__ = EdificioFIFO
         e.tipo_edificio = self.TIPO_FIFO
+        return e
+
+    def copia_RoundRobbin(self):
+        e = copy.deepcopy(self)
+        e.__class__ = EdificioRoundRobbin
+        e.tipo_edificio = self.TIPO_RR
+        e.ultimo_v_cargado = 0
         return e
 
     def copia_Inteligente(self):
@@ -132,6 +140,9 @@ class Edificio:
     # Cola de espera
     ############################################################
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
+        """
+        Esto se debe aplicar segun la logica de cada edificio
+        """
         raise NotImplementedError
 
     def agregar_a_cola_de_espera(self, autos_a_cargar: List[Vehiculo]):
@@ -177,9 +188,9 @@ class Edificio:
 
     def limpiar_cola_de_carga(self):
         """
-        Quita los vehiculos que ya estan a full carga
+        Esto se debe aplicar segun la logica de cada edificio
         """
-        self.cola_de_carga = [v for v in self.cola_de_carga if v.necesita_carga]
+        raise NotImplementedError
 
     @property
     def cola_de_carga_llena(self):
@@ -283,17 +294,65 @@ class EdificioFIFO(Edificio):
     """
     Apenas los vehículos estan en cola de espera
     se agregan a la cola de carga en orden de llegada
+    pero solo los saca cuando estan a full o salen del edificio
     """
 
-    def __init__(self, nombre: str, cant_vehiculos: int):
-        super().__init__(nombre, cant_vehiculos)
-        self.tipo_edificio = self.TIPO_FIFO
-
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
-        if v not in self.cola_de_espera and v not in self.cola_de_carga:
+        if v not in self.cola_de_carga and v not in self.cola_de_espera:
             logger.debug(f"{v}: agregando a cola de espera")
             self.cola_de_espera.append(v)
             logger.debug(f"{v}: {self.cola_de_espera=}")
+
+    def limpiar_cola_de_carga(self):
+        """
+        Quita sólo los vehiculos que ya estan a full carga
+        """
+        self.cola_de_carga = [v for v in self.cola_de_carga if not v.cargado_full]
+
+
+class EdificioRoundRobbin(Edificio):
+    """
+    Apenas los vehículos estan en cola de espera
+    se agregan a la cola de carga en orden de llegada
+    """
+
+    def _agregar_a_cola_de_espera(self, v: Vehiculo):
+        """
+        RoundRobbin no usa lista de espera
+        """
+        pass
+
+    def actualizar_cola_de_carga(self):
+        """
+        En vez de la cola de espera, RoundRobbin recorre la lista
+        de vehiculos desde el último que cargó hasta que llena la
+        cola de carga o los recorre todos
+        """
+        v_inicial = int(self.ultimo_v_cargado)
+        total_vehiculos = len(self.vehiculos)
+
+        for i in range(1, total_vehiculos + 1):
+            # si la cola está llena terminar el ciclo
+            if self.cola_de_carga_llena:
+                break
+
+            # obtener sgte vehiculos en la lista
+            num_vehiculo = (i + v_inicial) % total_vehiculos
+            v = self.vehiculos[num_vehiculo]
+
+            if v.en_el_edificio and not v.cargado_full:
+                self.agregar_a_cola_de_carga(v)
+
+            self.ultimo_v_cargado = num_vehiculo
+
+        logger.debug(f"%s: actualizada {self.cola_de_carga=}", self)
+
+    def limpiar_cola_de_carga(self):
+        """
+        Borra todos los vehiculos, ya que
+        se rotan al atualizar la cola de carga
+        """
+        self.cola_de_carga = []
 
 
 class EdificioInteligente(Edificio):
@@ -304,11 +363,11 @@ class EdificioInteligente(Edificio):
     - cuánto tiempo lleva en espera
     """
 
-    def __init__(self, nombre: str, cant_vehiculos: int):
-        super().__init__(nombre, cant_vehiculos)
-        self.tipo_edificio = self.TIPO_INT
-
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
+        """
+        Agrega el vehículo y luego reordena
+        la cola de carga segun prioridad
+        """
         if v not in self.cola_de_espera and v not in self.cola_de_carga:
             logger.debug(f"{v}: agregando a cola de espera")
             self.cola_de_espera.append(v)
@@ -318,3 +377,10 @@ class EdificioInteligente(Edificio):
             logger.debug(f"{v}: reordenando cola de espera")
             self.cola_de_espera.sort(key=lambda v: v.prioridad, reverse=True)
             logger.debug(f"{v}: {self.cola_de_espera=}")
+
+    def limpiar_cola_de_carga(self):
+        """
+        Quita todos los vehiculos, ya que
+        se repriorizan en cada iteracion
+        """
+        self.cola_de_carga = []
