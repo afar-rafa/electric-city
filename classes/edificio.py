@@ -59,7 +59,7 @@ class Edificio:
         cant_v = c.VEHICULOS_POR_EDIFICIO or randrange(1, self.tope_vehiculos + 1)
         for i in range(cant_v):
             # crear un nuevo vehiculo
-            v = Vehiculo(f"Vehiculo {i + 1}")
+            v = Vehiculo(f"VE{i + 1}")
 
             # asignarle este edificio
             v.edificio = self

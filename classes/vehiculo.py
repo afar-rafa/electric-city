@@ -42,14 +42,10 @@ class Vehiculo:
 
         if c.MIN_SALIDAS and c.MAX_SALIDAS and c.MIN_SALIDAS <= c.MAX_SALIDAS:
             cant_salidas = randrange(c.MIN_SALIDAS, c.MAX_SALIDAS + 1)
-            logger.warning(
-                f"{self.edificio} - {self}: Usando cant de salidas seteada de {cant_salidas}"
-            )
+            logger.warning(f"{self}: Usando cant de salidas seteada de {cant_salidas}")
         else:
             cant_salidas = c.CANT_SALIDAS
-            logger.warning(
-                f"{self.edificio} - {self}: Usando cant de salidas default de {cant_salidas}"
-            )
+            logger.warning(f"{self}: Usando cant de salidas fija de {cant_salidas}")
 
         self.salidas: List[Tuple[datetime.datetime, datetime.datetime]] = (
             salidas_random(
@@ -96,10 +92,10 @@ class Vehiculo:
         """
         valor a usar al ordenar los vehiculos en un edificio
         """
-        prioridad = self.gasto_restante_dia - self.bateria
+        prioridad = (self.gasto_total_del_dia - self.bateria) / self.max_bateria
 
         logger.info(
-            f"{self.edificio} - {self}: [gasto_restante={self.gasto_restante_dia:.1f} - bateria={self.bateria:.1f} = prioridad={prioridad:.1f}]"
+            f"{self.edificio} - {self}: [gasto_restante={self.gasto_total_del_dia:.1f} - bateria={self.bateria:.1f} = prioridad={prioridad:.1f}]"
         )
         return prioridad
 
@@ -120,17 +116,14 @@ class Vehiculo:
         return self.gasto_de_viaje(salida, llegada)
 
     @property
-    def gasto_restante_dia(self) -> float:
+    def gasto_total_del_dia(self) -> float:
         """
-        Total de viajes que le quedan en el día
+        Total de bateria que se requiere diariamente
         """
         gasto = 0
-        salidas_restantes = self.salidas[self.siguiente_salida :]
-        logger.debug(
-            f"{self.edificio}: {self} - Revisando salidas restantes {salidas_restantes}"
-        )
+        logger.debug(f"{self.edificio}: {self} - Revisando salidas {self.salidas}")
 
-        for s in salidas_restantes:
+        for s in self.salidas:
             gasto += self.gasto_de_viaje(s[0], s[1])
 
         logger.debug(f"{self.edificio}: {self} - Gasto calculado [{gasto=}]")
@@ -159,11 +152,11 @@ class Vehiculo:
     @property
     def necesita_cargarse(self) -> bool:
         """
-        Revisa si tiene suficiente para su sgte viaje
+        Revisa si tiene suficiente para funcionar durante el día
         """
-        necesita_carga = self.bateria < self.gasto_sgte_salida
+        necesita_carga = self.bateria < self.gasto_total_del_dia
         logger.debug(
-            f"{self}: necesita_cargarse? [bateria={self.bateria:.2f} < {self.gasto_sgte_salida:.2f}] = {necesita_carga}"
+            f"{self}: necesita_cargarse? [bateria={self.bateria:.2f} < {self.gasto_total_del_dia:.2f}] = {necesita_carga}"
         )
         return necesita_carga
 

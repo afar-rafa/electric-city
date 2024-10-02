@@ -45,7 +45,7 @@ FINAL_HORARIO_FALLA = config.get("FINAL_HORARIO_FALLA", "20:00")
 REDUCCION_EN_FALLA = float(config.get("REDUCCION_EN_FALLA", 0.1))
 
 # ------------------- Constantes Vehiculos --------------------
-VELOCIDAD_PROMEDIO = config.get("VELOCIDAD_PROMEDIO", 50)  # KM/h
+VELOCIDAD_PROMEDIO = int(config.get("VELOCIDAD_PROMEDIO", 50))  # KM/h
 CANT_SALIDAS = int(config.get("CANT_SALIDAS", 3))
 
 HORA_PRIMERA_SALIDA = "07:30"  # 07:30 +/- 45 mins
