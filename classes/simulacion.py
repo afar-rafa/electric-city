@@ -23,13 +23,14 @@ class Simulacion:
         self.timer = Timer()
 
         # sacar del header los nombres de cada edificio
-        csv_edificios = self.db.headers_de_csv(nombre=archivo_potencias)[1:]
+        csv_edificios = self.db.leer_headers(nombre=archivo_potencias)[1:]
+        logger.warning(f"Simulacion - {csv_edificios=}")
 
         # revisar que los numeros sean razonables
         if not csv_edificios:
             raise ValueError(f"Cantidad invalida de edificios [{csv_edificios=}]")
 
-        # crear los efificios con sus respectivos vehiculos
+        # crear los efificios con sus respectivos vehículos
         self.edificios: List[Edificio] = []
         for e in csv_edificios:
             edificio = Edificio(
@@ -49,23 +50,18 @@ class Simulacion:
                 e = edificio.copia_Inteligente()
                 self.edificios.append(e)
 
-                self.db.crear_csv(
-                    name=f"Prioridades {e}.csv",
-                    headers=["Tiempo"] + [f"{v}" for v in e.vehiculos],
-                )
-
     def empezar(self):
         # Crea los archivos para cada edificio
         self.db.crear_archivo_de_edificios(self.edificios)
 
-        # mostrar datos de cada vehiculo en los edificios
+        # mostrar datos de cada vehículo en los edificios
         for e in self.edificios:
-            for v in e.vehiculos:
+            for v in e.vehículos:
                 logger.info(f"{e} - {v}: {v.max_bateria=}, {v.bateria=}")
                 logger.info(f"{e} - {v}: salidas={v.salidas_str}")
 
-        # Inicia la simulacion
-        for rows in self.db.leer_csv(c.POTENCIAS_CSV):
+        # Inicia la simulación
+        for rows in self.db.leer(c.POTENCIAS_CSV):
             # saltar los headers
 
             t = self.timer.set_hh_mm(rows["Tiempo"])

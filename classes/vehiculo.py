@@ -90,7 +90,7 @@ class Vehiculo:
     @property
     def prioridad(self) -> float:
         """
-        valor a usar al ordenar los vehiculos en un edificio
+        valor a usar al ordenar los vehículos en un edificio
         """
         prioridad = (self.gasto_total_del_dia - self.bateria) / self.max_bateria
 

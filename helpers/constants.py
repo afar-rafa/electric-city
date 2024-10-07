@@ -16,6 +16,7 @@ script_dir = os.path.dirname(script_path)
 config = dotenv_values(f"{script_dir}/env.txt")
 
 # usar la carpeta para encontrar el input
+FILE_EXT = "csv"
 POTENCIAS_CSV = f"{script_dir}/potencia_consumida.csv"
 
 # Tiempo en minutos que avanza entre cada ciclo de tiempo
@@ -32,11 +33,11 @@ np.random.seed(SEED)
 random.seed(SEED)
 
 # ------------------- Constantes Edificios --------------------
-VEHICULOS_POR_EDIFICIO = int(config.get("VEHICULOS_POR_EDIFICIO", 4))
-MAX_VEHICULOS_EN_CARGA = int(config.get("MAX_VEHICULOS_EN_CARGA", 1))
+VEHÍCULOS_POR_EDIFICIO = int(config.get("VEHÍCULOS_POR_EDIFICIO", 4))
+MAX_VEHÍCULOS_EN_CARGA = int(config.get("MAX_VEHÍCULOS_EN_CARGA", 1))
 POTENCIA_DECLARADA = int(float(config.get("POTENCIA_DECLARADA", 25000)))
 POT_DISPONIBLE_MINIMA = int(config.get("POT_DISPONIBLE_MINIMA", 30))
-POTENCIA_CARGADORES = int(config.get("POTENCIA_CARGADORES", 7))
+POTENCIA_CARGADORES = float(config.get("POTENCIA_CARGADORES", 7.4))
 TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))
 
 # Periodos de falla reducen la potencia disponible a un 10%
@@ -45,7 +46,7 @@ INICIO_HORARIO_FALLA = config.get("INICIO_HORARIO_FALLA", "18:00")
 FINAL_HORARIO_FALLA = config.get("FINAL_HORARIO_FALLA", "20:00")
 REDUCCION_EN_FALLA = float(config.get("REDUCCION_EN_FALLA", 0.1))
 
-# ------------------- Constantes Vehiculos --------------------
+# ------------------- Constantes vehículos --------------------
 VELOCIDAD_PROMEDIO = int(config.get("VELOCIDAD_PROMEDIO", 50))  # KM/h
 CANT_SALIDAS = int(config.get("CANT_SALIDAS", 3))
 

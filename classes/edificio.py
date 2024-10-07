@@ -17,7 +17,7 @@ class Edificio:
     """
     Clase principal para crear un edificio.
 
-    Al momento de crearse le debes pasar cuántos vehiculos
+    Al momento de crearse le debes pasar cuántos vehículos
     quieres que tenga:
 
     EJ: crear un edificio con 10 autos:
@@ -43,21 +43,21 @@ class Edificio:
         # Potencia total disponible del edificio
         self.potencia_declarada = c.POTENCIA_DECLARADA
 
-        # potencia de los cargadores de Vehiculos
-        self.potencia_cargadores = c.POTENCIA_CARGADORES
+        # potencia de los cargadores de vehículos
+        self.potencia_cargadores: float = c.POTENCIA_CARGADORES
 
         # potencia disponible, calculada durante la simulacion
-        self.potencia_disponble: float | None = None
+        self.potencia_disponible: float | None = None
 
-        # colas de vehiculos
+        # colas de vehículos
         self.cola_de_espera: List[Vehiculo] = []
         self.cola_de_carga: List[Vehiculo] = []
 
-        # crear vehiculos
-        self.vehiculos: List[Vehiculo] = []
+        # crear vehículos
+        self.vehículos: List[Vehiculo] = []
 
         # si no se especifican, toma una cant al azar
-        cant_v = c.VEHICULOS_POR_EDIFICIO or randrange(1, self.tope_vehiculos + 1)
+        cant_v = c.VEHÍCULOS_POR_EDIFICIO or randrange(1, self.tope_vehículos + 1)
         for i in range(cant_v):
             # crear un nuevo vehiculo
             v = Vehiculo(f"VE{i + 1}")
@@ -65,11 +65,11 @@ class Edificio:
             # asignarle este edificio
             v.edificio = self
 
-            # y agregarlo a la lista de vehiculos
-            self.vehiculos.append(v)
+            # y agregarlo a la lista de vehículos
+            self.vehículos.append(v)
 
     @property
-    def tope_vehiculos(self):
+    def tope_vehículos(self):
         """
         Cada edificio debe crear una cantidad random de vehículos:
 
@@ -77,7 +77,7 @@ class Edificio:
         """
         return int(self.potencia_declarada / self.potencia_cargadores * 0.7)
 
-    def actualizar_potencia_disponble(
+    def actualizar_potencia_disponible(
         self,
         t: datetime.datetime,
         porcentaje_consumo: str,
@@ -104,12 +104,12 @@ class Edificio:
             )
             logger.debug(f"{self}: t={t.strftime('%H:%M')} {consumo=}")
 
-        self.potencia_disponble = max(self.potencia_declarada - consumo, 0)
+        self.potencia_disponible = max(self.potencia_declarada - consumo, 0)
         logger.info(
             f"{self}: actualizando potencia "
             f"[declarada={self.potencia_declarada}, "
             f"{consumo=:.1f}, "
-            f"disponible={self.potencia_disponble}]"
+            f"disponible={self.potencia_disponible}]"
         )
 
     ############################################################
@@ -194,10 +194,14 @@ class Edificio:
 
     @property
     def cola_de_carga_llena(self):
-        if hasattr(c, "MAX_VEHICULOS_EN_CARGA") and c.MAX_VEHICULOS_EN_CARGA:
-            max_capacidad = c.MAX_VEHICULOS_EN_CARGA
-        else:
-            max_capacidad = int(self.potencia_disponble / self.potencia_cargadores)
+        max_capacidad = int(self.potencia_disponible / self.potencia_cargadores)
+
+        if (
+            hasattr(c, "MAX_VEHÍCULOS_EN_CARGA")
+            and c.MAX_VEHÍCULOS_EN_CARGA
+            and c.MAX_VEHÍCULOS_EN_CARGA < max_capacidad
+        ):
+            max_capacidad = c.MAX_VEHÍCULOS_EN_CARGA
 
         logger.debug(
             f"cola_de_carga_llena? en_carga={len(self.cola_de_carga)} >= {max_capacidad=}"
@@ -208,7 +212,7 @@ class Edificio:
     def energia_a_cargar(self) -> float:
         return self.potencia_cargadores * c.MINS_POR_CICLO / 60  # KWmin
 
-    def cargar_vehiculos(self):
+    def cargar_vehículos(self):
         """
         A cada vehiculo le suma:
         E = E + (Potencia_cargador * paso_tiempo)
@@ -224,12 +228,12 @@ class Edificio:
             self.cola_de_carga.remove(v)
 
     @property
-    def bateria_de_vehiculos(self):
-        return [float(np.round(v.bateria / v.max_bateria, 2)) for v in self.vehiculos]
+    def bateria_de_vehículos(self):
+        return [float(np.round(v.bateria / v.max_bateria, 2)) for v in self.vehículos]
 
     @property
-    def prioridad_de_vehiculos(self):
-        return [float(np.round(v.prioridad, 2)) for v in self.vehiculos]
+    def prioridad_de_vehículos(self):
+        return [float(np.round(v.prioridad, 2)) for v in self.vehículos]
 
     ############################################################
     # Simular paso del tiempo
@@ -241,13 +245,13 @@ class Edificio:
     ):
         logger.debug(f"{self}: t={t.strftime('%H:%M')} {porcentaje_consumo=}")
 
-        self.actualizar_potencia_disponble(t, porcentaje_consumo)
+        self.actualizar_potencia_disponible(t, porcentaje_consumo)
 
         # los esto es para separar aquellos que necesitan carga para
         # su siguiente viaje y aquellos que solo no están a 100%
         autos_a_cargar: List[Vehiculo] = []
 
-        for v in self.vehiculos:
+        for v in self.vehículos:
             logger.debug("%s: revisando %s", self, v)
             v.actualizar_status(t)
 
@@ -262,7 +266,7 @@ class Edificio:
 
             # si esta en el edificio, cargarlo si es necesario
             else:
-                # agregar los vehiculos que no estan a full
+                # agregar los vehículos que no estan a full
                 if not v.cargado_full:
                     autos_a_cargar.append(v)
 
@@ -272,11 +276,11 @@ class Edificio:
 
         logger.debug(f"%s: {self.cola_de_espera=}", self)
 
-        # agregar vehiculos a cola de carga si se puede
+        # agregar vehículos a cola de carga si se puede
         self.actualizar_cola_de_carga()
 
-        # cargar vehiculos en cola de carga
-        self.cargar_vehiculos()
+        # cargar vehículos en cola de carga
+        self.cargar_vehículos()
 
         # sacar los que quedaron ok
         self.limpiar_cola_de_carga()
@@ -305,7 +309,7 @@ class EdificioFIFO(Edificio):
 
     def limpiar_cola_de_carga(self):
         """
-        Quita sólo los vehiculos que ya estan a full carga
+        Quita sólo los vehículos que ya estan a full carga
         """
         self.cola_de_carga = [v for v in self.cola_de_carga if not v.cargado_full]
 
@@ -325,20 +329,20 @@ class EdificioRoundRobbin(Edificio):
     def actualizar_cola_de_carga(self):
         """
         En vez de la cola de espera, RoundRobbin recorre la lista
-        de vehiculos desde el último que cargó hasta que llena la
+        de vehículos desde el último que cargó hasta que llena la
         cola de carga o los recorre todos
         """
         v_inicial = int(self.ultimo_v_cargado)
-        total_vehiculos = len(self.vehiculos)
+        total_vehículos = len(self.vehículos)
 
-        for i in range(1, total_vehiculos + 1):
+        for i in range(1, total_vehículos + 1):
             # si la cola está llena terminar el ciclo
             if self.cola_de_carga_llena:
                 break
 
-            # obtener sgte vehiculos en la lista
-            num_vehiculo = (i + v_inicial) % total_vehiculos
-            v = self.vehiculos[num_vehiculo]
+            # obtener sgte vehículos en la lista
+            num_vehiculo = (i + v_inicial) % total_vehículos
+            v = self.vehículos[num_vehiculo]
 
             if v.en_el_edificio and not v.cargado_full:
                 self.agregar_a_cola_de_carga(v)
@@ -349,7 +353,7 @@ class EdificioRoundRobbin(Edificio):
 
     def limpiar_cola_de_carga(self):
         """
-        Borra todos los vehiculos, ya que
+        Borra todos los vehículos, ya que
         se rotan al atualizar la cola de carga
         """
         self.cola_de_carga = []
@@ -380,7 +384,7 @@ class EdificioInteligente(Edificio):
 
     def limpiar_cola_de_carga(self):
         """
-        Quita todos los vehiculos, ya que
+        Quita todos los vehículos, ya que
         se repriorizan en cada iteracion
         """
         self.cola_de_carga = []
