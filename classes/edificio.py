@@ -196,12 +196,8 @@ class Edificio:
     def cola_de_carga_llena(self):
         max_capacidad = int(self.potencia_disponible / self.potencia_cargadores)
 
-        if (
-            hasattr(c, "MAX_VEHÍCULOS_EN_CARGA")
-            and c.MAX_VEHÍCULOS_EN_CARGA
-            and c.MAX_VEHÍCULOS_EN_CARGA < max_capacidad
-        ):
-            max_capacidad = c.MAX_VEHÍCULOS_EN_CARGA
+        if c.LIMITAR_CARGADORES and c.TOPE_DE_CARGADORES < max_capacidad:
+            max_capacidad = c.TOPE_DE_CARGADORES
 
         logger.debug(
             f"cola_de_carga_llena? en_carga={len(self.cola_de_carga)} >= {max_capacidad=}"

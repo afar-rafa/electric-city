@@ -33,10 +33,11 @@ np.random.seed(SEED)
 random.seed(SEED)
 
 # ------------------- Constantes Edificios --------------------
-VEHÍCULOS_POR_EDIFICIO = int(config.get("VEHÍCULOS_POR_EDIFICIO", 4))
-MAX_VEHÍCULOS_EN_CARGA = int(config.get("MAX_VEHÍCULOS_EN_CARGA", 1))
+VEHÍCULOS_POR_EDIFICIO = int(config.get("VEHÍCULOS_POR_EDIFICIO", 5))
 POTENCIA_DECLARADA = int(float(config.get("POTENCIA_DECLARADA", 25000)))
 POT_DISPONIBLE_MINIMA = int(config.get("POT_DISPONIBLE_MINIMA", 30))
+LIMITAR_CARGADORES = bool(int(bool(config.get("LIMITAR_CARGADORES", 1))))
+TOPE_DE_CARGADORES = int(config.get("TOPE_DE_CARGADORES", 2))
 POTENCIA_CARGADORES = float(config.get("POTENCIA_CARGADORES", 7.4))
 TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))
 
