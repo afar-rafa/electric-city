@@ -83,32 +83,39 @@ class Edificio:
         porcentaje_consumo: str,
     ) -> None:
         """
-        potencia disponble = potencia maxima - consumo
-        (no puede ser negativa)
-
         Se asigna al edificio actual en cada ciclo de tiempo
         """
-        # si es un periodo de falla, reducir la potencia,
-        # si no, basarse en la potencia declarada y consumida
+        porcentaje_disponible = 1 - (float(porcentaje_consumo) / 100)
+
+        # si es un periodo de falla, reducir la potencia total
         if c.HAY_FALLA and Timer().time_in_range(
             t, c.INICIO_HORARIO_FALLA, c.FINAL_HORARIO_FALLA
         ):
-            consumo = c.POTENCIA_DECLARADA * c.REDUCCION_EN_FALLA
-            logger.info(
-                f"{self}: t={t.strftime('%H:%M')} {consumo=} (Horario de Falla)"
+            logger.warning(
+                f"%s: Reducción por falla [t=%s, p_disp=%d * %d%%]",
+                self,
+                t.strftime("%H:%M"),
+                porcentaje_disponible,
+                c.REDUCCION_EN_FALLA,
             )
-        else:
-            p_consumo = float(porcentaje_consumo) / 100
-            consumo = max(  # permitir siempre un minimo de potencia si esta existe
-                c.POTENCIA_DECLARADA * p_consumo, c.POT_DISPONIBLE_MINIMA
-            )
-            logger.debug(f"{self}: t={t.strftime('%H:%M')} {consumo=}")
+            porcentaje_disponible *= c.REDUCCION_EN_FALLA / 100
 
-        self.potencia_disponible = max(self.potencia_declarada - consumo, 0)
+        # # si no hubo falla, permitir un mínimo % disponible para los autos
+        elif porcentaje_disponible < c.POT_DISPONIBLE_MINIMA / 100:
+            logger.warning(
+                f"%s: Ajuste de potencia [t=%s, p_disp=%d -> %d%]",
+                self,
+                t.strftime("%H:%M"),
+                porcentaje_disponible,
+                c.POT_DISPONIBLE_MINIMA,
+            )
+            porcentaje_disponible = c.POT_DISPONIBLE_MINIMA / 100
+
+        self.potencia_disponible = c.POTENCIA_DECLARADA * porcentaje_disponible
         logger.info(
             f"{self}: actualizando potencia "
             f"[declarada={self.potencia_declarada}, "
-            f"{consumo=:.1f}, "
+            f"{porcentaje_disponible=:.1f}, "
             f"disponible={self.potencia_disponible}]"
         )
 
