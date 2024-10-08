@@ -24,7 +24,7 @@ MINS_POR_CICLO = int(config.get("MINS_POR_CICLO", 15))
 
 LOG_LEVEL = config.get("LOG_LEVEL", "INFO")
 SIMULAR_FIFO = bool(int(config.get("SIMULAR_FIFO", 1)))
-SIMULAR_ROUNDROBBIN = bool(int(config.get("SIMULAR_ROUNDROBBIN", 1)))
+SIMULAR_ROUNDROBIN = bool(int(config.get("SIMULAR_ROUNDROBIN", 1)))
 SIMULAR_INTELIGENTE = bool(int(config.get("SIMULAR_INTELIGENTE", 1)))
 
 # Cambiar seed para obtener otra simulación aleatoria
@@ -36,7 +36,8 @@ random.seed(SEED)
 VEHÍCULOS_POR_EDIFICIO = int(config.get("VEHÍCULOS_POR_EDIFICIO", 5))
 POTENCIA_DECLARADA = int(float(config.get("POTENCIA_DECLARADA", 25000)))
 POT_DISPONIBLE_MINIMA = int(config.get("POT_DISPONIBLE_MINIMA", 30))
-LIMITAR_CARGADORES = bool(int(bool(config.get("LIMITAR_CARGADORES", 1))))
+
+LIMITAR_CARGADORES = bool(int(config.get("LIMITAR_CARGADORES", 1)))
 TOPE_DE_CARGADORES = int(config.get("TOPE_DE_CARGADORES", 2))
 POTENCIA_CARGADORES = float(config.get("POTENCIA_CARGADORES", 7.4))
 TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))

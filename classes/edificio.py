@@ -30,7 +30,7 @@ class Edificio:
     """
 
     TIPO_FIFO = "FIFO"
-    TIPO_RR = "RoundRobbin"
+    TIPO_RR = "RoundRobin"
     TIPO_INT = "INT"
 
     def __init__(
@@ -38,7 +38,7 @@ class Edificio:
         nombre: str,
     ):
         self.nombre = nombre
-        self.tipo_edificio = ""  # FIFO/RoundRobbin/Inteligente
+        self.tipo_edificio = ""  # FIFO/RoundRobin/Inteligente
 
         # Potencia total disponible del edificio
         self.potencia_declarada = c.POTENCIA_DECLARADA
@@ -122,7 +122,7 @@ class Edificio:
     ############################################################
     # Transformaciones
     # Estos metodos retornan una copia del edificio transformado
-    # a un FIFO/RoundRobbin/Inteligente
+    # a un FIFO/RoundRobin/Inteligente
     ############################################################
     def copia_FIFO(self):
         e = copy.deepcopy(self)
@@ -130,9 +130,9 @@ class Edificio:
         e.tipo_edificio = self.TIPO_FIFO
         return e
 
-    def copia_RoundRobbin(self):
+    def copia_RoundRobin(self):
         e = copy.deepcopy(self)
-        e.__class__ = EdificioRoundRobbin
+        e.__class__ = EdificioRoundRobin
         e.tipo_edificio = self.TIPO_RR
         e.ultimo_v_cargado = 0
         return e
@@ -317,7 +317,7 @@ class EdificioFIFO(Edificio):
         self.cola_de_carga = [v for v in self.cola_de_carga if not v.cargado_full]
 
 
-class EdificioRoundRobbin(Edificio):
+class EdificioRoundRobin(Edificio):
     """
     Apenas los vehículos estan en cola de espera
     se agregan a la cola de carga en orden de llegada
@@ -325,13 +325,13 @@ class EdificioRoundRobbin(Edificio):
 
     def _agregar_a_cola_de_espera(self, v: Vehiculo):
         """
-        RoundRobbin no usa lista de espera
+        RoundRobin no usa lista de espera
         """
         pass
 
     def actualizar_cola_de_carga(self):
         """
-        En vez de la cola de espera, RoundRobbin recorre la lista
+        En vez de la cola de espera, RoundRobin recorre la lista
         de vehículos desde el último que cargó hasta que llena la
         cola de carga o los recorre todos
         """

@@ -41,9 +41,9 @@ class Simulacion:
                     edificio.copia_FIFO(),
                 )
 
-            if c.SIMULAR_ROUNDROBBIN:
+            if c.SIMULAR_ROUNDROBIN:
                 self.edificios.append(
-                    edificio.copia_RoundRobbin(),
+                    edificio.copia_RoundRobin(),
                 )
 
             if c.SIMULAR_INTELIGENTE:
