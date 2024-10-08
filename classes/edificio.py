@@ -30,7 +30,7 @@ class Edificio:
     """
 
     TIPO_FIFO = "FIFO"
-    TIPO_RR = "RoundRobin"
+    TIPO_RR = "RR"
     TIPO_INT = "INT"
 
     def __init__(
@@ -92,7 +92,7 @@ class Edificio:
             t, c.INICIO_HORARIO_FALLA, c.FINAL_HORARIO_FALLA
         ):
             logger.warning(
-                f"%s: Reducción por falla [t=%s, p_disp=%d * %d%%]",
+                f"%s: Reducción por falla [t=%s, p_disp=%f * %d%%]",
                 self,
                 t.strftime("%H:%M"),
                 porcentaje_disponible,
@@ -103,7 +103,7 @@ class Edificio:
         # # si no hubo falla, permitir un mínimo % disponible para los autos
         elif porcentaje_disponible < c.POT_DISPONIBLE_MINIMA / 100:
             logger.warning(
-                f"%s: Ajuste de potencia [t=%s, p_disp=%d -> %d%]",
+                f"%s: Ajuste de potencia [t=%s, p_disp=%f -> %d%]",
                 self,
                 t.strftime("%H:%M"),
                 porcentaje_disponible,
