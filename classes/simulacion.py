@@ -75,7 +75,7 @@ class Simulacion:
                 # exportar el minuto actual a un .csv
                 self.db.guardar_estado_de_edificio(
                     tiempo=self.timer.actual_str,
-                    edificio=e,
+                    e=e,
                 )
 
             # # uncomment this for a step by step execution

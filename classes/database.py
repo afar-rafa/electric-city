@@ -32,7 +32,7 @@ class DBFileHandler:
 # Para archivos CSV
 class CSVFileHandler(DBFileHandler):
     def crear_archivo(self, nombre: str, headers: List[str]):
-        with open(f"{nombre}", "w") as csv_file:
+        with open(nombre, "w") as csv_file:
             csv_writer = csv.writer(
                 csv_file,
                 delimiter=CSV_DELIMITER,
@@ -143,22 +143,24 @@ class DB:
     def crear_archivo_de_edificios(self, edificios: List["Edificio"]):  # type: ignore
         for e in edificios:
             self.crear_archivo(
-                nombre=f"{e}.{FILE_EXT}",
+                nombre=f"{OUTPUT_FOLDER}/{e}.{FILE_EXT}",
                 headers=["Tiempo", "Potencia Disponible"]
                 + [f"{v}" for v in e.vehículos],
             )
             if e.tipo_edificio == Edificio.TIPO_INT:
                 self.crear_archivo(
-                    nombre=f"Prioridades {e}.{FILE_EXT}",
+                    nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{FILE_EXT}",
                     headers=["Tiempo"] + [f"{v}" for v in e.vehículos],
                 )
 
-    def guardar_estado_de_edificio(self, tiempo: str, edificio: Edificio):
-        fila = [tiempo, edificio.potencia_disponible] + edificio.bateria_de_vehículos
+    def guardar_estado_de_edificio(self, tiempo: str, e: Edificio):
+        fila = [tiempo, e.potencia_disponible] + e.bateria_de_vehículos
 
         logger.info("Simulación: %s", fila)
-        self.agregar_fila(nombre=f"{edificio}.{FILE_EXT}", fila=fila)
+        self.agregar_fila(nombre=f"{OUTPUT_FOLDER}/{e}.{FILE_EXT}", fila=fila)
 
-        if edificio.tipo_edificio == Edificio.TIPO_INT:
-            fila = [tiempo] + edificio.prioridad_de_vehículos
-            self.agregar_fila(nombre=f"Prioridades {edificio}.{FILE_EXT}", fila=fila)
+        if e.tipo_edificio == Edificio.TIPO_INT:
+            fila = [tiempo] + e.prioridad_de_vehículos
+            self.agregar_fila(
+                nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{FILE_EXT}", fila=fila
+            )
