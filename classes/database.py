@@ -95,7 +95,6 @@ class ExcelFileHandler(DBFileHandler):
         wb = openpyxl.load_workbook(nombre)
         ws = wb.active
         for row in ws.iter_rows(values_only=True):
-            logger.warning(f"DB - {row=}")
             yield dict(
                 # Assuming first row as header
                 zip([cell.value for cell in ws[1]], row)

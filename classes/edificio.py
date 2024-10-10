@@ -92,11 +92,12 @@ class Edificio:
             t, c.INICIO_HORARIO_FALLA, c.FINAL_HORARIO_FALLA
         ):
             logger.warning(
-                f"%s: Reducción por falla [t=%s, p_disp=%f * %d%%, cargadores=%dKWh]",
+                f"%s: Reducción por falla [t=%s, porcentaje_disponible=%.4f * %d%% -> %.4f, cargadores=%.1fKWh]",
                 self,
                 t.strftime("%H:%M"),
                 porcentaje_disponible,
                 c.REDUCCION_EN_FALLA,
+                porcentaje_disponible * c.REDUCCION_EN_FALLA / 100,
                 c.POTENCIA_MIN_CARGADORES,
             )
             porcentaje_disponible *= c.REDUCCION_EN_FALLA / 100
@@ -105,22 +106,22 @@ class Edificio:
         # # si no hubo falla, permitir un mínimo % disponible para los autos
         elif porcentaje_disponible < c.POT_DISPONIBLE_MINIMA / 100:
             logger.warning(
-                f"%s: Ajuste de potencia [t=%s, p_disp=%f -> %d%]",
+                f"%s: Ajuste de potencia [t=%s, porcentaje_disponible=%f -> %d%]",
                 self,
                 t.strftime("%H:%M"),
                 porcentaje_disponible,
                 c.POT_DISPONIBLE_MINIMA,
             )
             porcentaje_disponible = c.POT_DISPONIBLE_MINIMA / 100
+        else:
             self.potencia_cargadores = c.POTENCIA_CARGADORES
-
 
         self.potencia_disponible = c.POTENCIA_DECLARADA * porcentaje_disponible
         logger.info(
             f"{self}: actualizando potencia "
             f"[declarada={self.potencia_declarada}, "
-            f"{porcentaje_disponible=:.1f}, "
-            f"disponible={self.potencia_disponible}]"
+            f"{porcentaje_disponible=:.3f}, "
+            f"disponible={self.potencia_disponible:.3f}]"
         )
 
     ############################################################
