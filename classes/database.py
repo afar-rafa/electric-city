@@ -4,12 +4,12 @@ from typing import List, Union
 import os
 import openpyxl
 
-from helpers.constants import FILE_EXT
+from helpers.constants import FILE_EXT, script_dir
 from classes.edificio import Edificio
 
 CSV_DELIMITER = "\t"
 CSV_QUOTECHAR = '"'
-OUTPUT_FOLDER = "outputs"
+OUTPUT_FOLDER = f"{script_dir}/outputs"
 
 logger = logging.getLogger(__name__)
 
