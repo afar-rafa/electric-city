@@ -39,6 +39,7 @@ POT_DISPONIBLE_MINIMA = int(config.get("POT_DISPONIBLE_MINIMA", 30))
 
 LIMITAR_CARGADORES = bool(int(config.get("LIMITAR_CARGADORES", 1)))
 TOPE_DE_CARGADORES = int(config.get("TOPE_DE_CARGADORES", 2))
+POTENCIA_MIN_CARGADORES = float(config.get("POTENCIA_MIN_CARGADORES", 2.2))
 POTENCIA_CARGADORES = float(config.get("POTENCIA_CARGADORES", 7.4))
 TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))
 
@@ -46,7 +47,7 @@ TOPE_TIEMPO_DE_MANEJO = int(config.get("TOPE_TIEMPO_DE_MANEJO", 3 * 60))
 HAY_FALLA = bool(int(config.get("HAY_FALLA", 0)))
 INICIO_HORARIO_FALLA = config.get("INICIO_HORARIO_FALLA", "18:00")
 FINAL_HORARIO_FALLA = config.get("FINAL_HORARIO_FALLA", "20:00")
-REDUCCION_EN_FALLA = float(config.get("REDUCCION_EN_FALLA", 0.1))
+REDUCCION_EN_FALLA = float(config.get("REDUCCION_EN_FALLA", 10))
 
 # ------------------- Constantes vehículos --------------------
 VELOCIDAD_PROMEDIO = int(config.get("VELOCIDAD_PROMEDIO", 50))  # KM/h

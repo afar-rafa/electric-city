@@ -92,13 +92,15 @@ class Edificio:
             t, c.INICIO_HORARIO_FALLA, c.FINAL_HORARIO_FALLA
         ):
             logger.warning(
-                f"%s: Reducción por falla [t=%s, p_disp=%f * %d%%]",
+                f"%s: Reducción por falla [t=%s, p_disp=%f * %d%%, cargadores=%dKWh]",
                 self,
                 t.strftime("%H:%M"),
                 porcentaje_disponible,
                 c.REDUCCION_EN_FALLA,
+                c.POTENCIA_MIN_CARGADORES,
             )
             porcentaje_disponible *= c.REDUCCION_EN_FALLA / 100
+            self.potencia_cargadores = c.POTENCIA_MIN_CARGADORES
 
         # # si no hubo falla, permitir un mínimo % disponible para los autos
         elif porcentaje_disponible < c.POT_DISPONIBLE_MINIMA / 100:
@@ -110,6 +112,8 @@ class Edificio:
                 c.POT_DISPONIBLE_MINIMA,
             )
             porcentaje_disponible = c.POT_DISPONIBLE_MINIMA / 100
+            self.potencia_cargadores = c.POTENCIA_CARGADORES
+
 
         self.potencia_disponible = c.POTENCIA_DECLARADA * porcentaje_disponible
         logger.info(
@@ -312,9 +316,16 @@ class EdificioFIFO(Edificio):
 
     def limpiar_cola_de_carga(self):
         """
-        Quita sólo los vehículos que ya estan a full carga
+        Mantiene sólo los vehículos que no estan a full carga
+        mientras la potencia disponible lo permita
         """
-        self.cola_de_carga = [v for v in self.cola_de_carga if not v.cargado_full]
+        if self.cola_de_carga_llena:
+            max_capacidad = int(self.potencia_disponible / self.potencia_cargadores)
+
+            if c.LIMITAR_CARGADORES and c.TOPE_DE_CARGADORES < max_capacidad:
+                max_capacidad = c.TOPE_DE_CARGADORES
+
+            self.cola_de_carga = self.cola_de_carga[:max_capacidad]
 
 
 class EdificioRoundRobin(Edificio):
