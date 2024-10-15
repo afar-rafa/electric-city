@@ -26,6 +26,7 @@ def get_rand_normal(mean: int, d_est: int) -> float:
         )
     )
 
+
 def get_rand_time(t: datetime.datetime) -> datetime.datetime:
     """
     Retorna el tiempo t +/- un multiplo al azar de 15 mins
