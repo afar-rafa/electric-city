@@ -4,7 +4,7 @@ from typing import List, Union
 import os
 import openpyxl
 
-from helpers.constants import FILE_EXT, script_dir
+from helpers.constants import OUTPUT_FORMAT, script_dir
 from classes.edificio import Edificio
 
 CSV_DELIMITER = "\t"
@@ -111,17 +111,25 @@ class ExcelFileHandler(DBFileHandler):
 class DB:
     handler = None
 
+    
+    def __init__(self, extension: str | None =None):
+        if extension:
+            self.cambiar_handler(extension)
+
     def _get_handler(self, file_name: str) -> DBFileHandler:
         if not self.handler:
             extension = os.path.splitext(file_name)[1].lower()
-            if extension == ".csv":
-                self.handler = CSVFileHandler()
-            elif extension == ".xlsx":
-                self.handler = ExcelFileHandler()
-            else:
-                raise ValueError(f"Unsupported file extension: {extension}")
-
+            self.cambiar_handler(extension)
         return self.handler
+
+    def cambiar_handler(self, extension):
+        print(extension)
+        if extension == ".csv":
+            self.handler = CSVFileHandler()
+        elif extension == ".xlsx":
+            self.handler = ExcelFileHandler()
+        else:
+            raise ValueError(f"Unsupported file extension: {extension}")
 
     def crear_archivo(self, nombre: str, headers: List[str]):
         handler = self._get_handler(nombre)
@@ -142,13 +150,13 @@ class DB:
     def crear_archivo_de_edificios(self, edificios: List["Edificio"]):  # type: ignore
         for e in edificios:
             self.crear_archivo(
-                nombre=f"{OUTPUT_FOLDER}/{e}.{FILE_EXT}",
+                nombre=f"{OUTPUT_FOLDER}/{e}.{OUTPUT_FORMAT}",
                 headers=["Tiempo", "Potencia Disponible"]
                 + [f"{v}" for v in e.vehículos],
             )
             if e.tipo_edificio == Edificio.TIPO_INT:
                 self.crear_archivo(
-                    nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{FILE_EXT}",
+                    nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{OUTPUT_FORMAT}",
                     headers=["Tiempo"] + [f"{v}" for v in e.vehículos],
                 )
 
@@ -156,10 +164,10 @@ class DB:
         fila = [tiempo, e.potencia_disponible] + e.bateria_de_vehículos
 
         logger.info("Simulación: %s", fila)
-        self.agregar_fila(nombre=f"{OUTPUT_FOLDER}/{e}.{FILE_EXT}", fila=fila)
+        self.agregar_fila(nombre=f"{OUTPUT_FOLDER}/{e}.{OUTPUT_FORMAT}", fila=fila)
 
         if e.tipo_edificio == Edificio.TIPO_INT:
             fila = [tiempo] + e.prioridad_de_vehículos
             self.agregar_fila(
-                nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{FILE_EXT}", fila=fila
+                nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{OUTPUT_FORMAT}", fila=fila
             )

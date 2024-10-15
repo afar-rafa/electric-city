@@ -1,7 +1,7 @@
 import logging
 
 from classes.simulacion import Simulacion
-from helpers.constants import LOG_LEVEL, POTENCIAS_CSV
+from helpers.constants import LOG_LEVEL, INPUT_FILE
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -11,7 +11,7 @@ logging.basicConfig(
 # Esto es para repetir la misma ejecución random
 s = Simulacion(
     "Super City",
-    archivo_potencias=POTENCIAS_CSV,
+    archivo_potencias=INPUT_FILE,
 )
 
 s.empezar()

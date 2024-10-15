@@ -18,12 +18,12 @@ class Simulacion:
         self.nombre = nombre
 
         # base de datos para importar/exportar datos
-        self.db = DB()
+        self.input = DB()
         # timer para manejar tiempos
         self.timer = Timer()
 
         # sacar del header los nombres de cada edificio
-        csv_edificios = self.db.leer_headers(nombre=archivo_potencias)[1:]
+        csv_edificios = self.input.leer_headers(nombre=archivo_potencias)[1:]
         logger.warning(f"Simulacion - {csv_edificios=}")
 
         # revisar que los numeros sean razonables
@@ -51,8 +51,11 @@ class Simulacion:
                 self.edificios.append(e)
 
     def empezar(self):
-        # Crea los archivos para cada edificio
-        self.db.crear_archivo_de_edificios(self.edificios)
+        # definir formato de salida
+        self.output = DB(f".{c.OUTPUT_FORMAT}")
+
+        # crear los archivos para cada edificio
+        self.output.crear_archivo_de_edificios(self.edificios)
 
         # mostrar datos de cada vehículo en los edificios
         for e in self.edificios:
@@ -61,7 +64,7 @@ class Simulacion:
                 logger.info(f"{e} - {v}: salidas={v.salidas_str}")
 
         # Inicia la simulación
-        for rows in self.db.leer(c.POTENCIAS_CSV):
+        for rows in self.input.leer(c.INPUT_FILE):
             # saltar los headers
 
             t = self.timer.set_hh_mm(rows["Tiempo"])
@@ -73,7 +76,7 @@ class Simulacion:
                 )
 
                 # exportar el minuto actual a un .csv
-                self.db.guardar_estado_de_edificio(
+                self.output.guardar_estado_de_edificio(
                     tiempo=self.timer.actual_str,
                     e=e,
                 )

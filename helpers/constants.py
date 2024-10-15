@@ -2,6 +2,7 @@ import math
 import os
 import random
 import sys
+from typing import Literal
 
 from dotenv import dotenv_values
 import numpy as np
@@ -16,8 +17,8 @@ script_dir = os.path.dirname(script_path)
 config = dotenv_values(f"{script_dir}/env.txt")
 
 # usar la carpeta para encontrar el input
-FILE_EXT = "csv"
-POTENCIAS_CSV = f"{script_dir}/potencia_consumida.csv"
+INPUT_FILE = config.get("INPUT_FILE")
+OUTPUT_FORMAT: Literal["xlsx", "csv"] = config.get("OUTPUT_FORMAT")
 
 # Tiempo en minutos que avanza entre cada ciclo de tiempo
 MINS_POR_CICLO = int(config.get("MINS_POR_CICLO", 15))
