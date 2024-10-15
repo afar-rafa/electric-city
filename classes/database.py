@@ -7,7 +7,6 @@ import openpyxl
 from helpers.constants import OUTPUT_FORMAT, script_dir
 from classes.edificio import Edificio
 
-CSV_DELIMITER = "\t"
 CSV_QUOTECHAR = '"'
 OUTPUT_FOLDER = f"{script_dir}/outputs"
 
@@ -40,21 +39,30 @@ class DBFileHandler:
 
 # Para archivos CSV
 class CSVFileHandler(DBFileHandler):
+    def __init__(self, format):
+        super().__init__()
+        if format == ".tsv":
+            self.CSV_DELIMITER = "\t" 
+        else:
+            self.CSV_DELIMITER = ","
+            
+        
     def crear_archivo(self, nombre: str, headers: List[str]):
         with open(nombre, "w") as csv_file:
             csv_writer = csv.writer(
                 csv_file,
-                delimiter=CSV_DELIMITER,
+                delimiter=self.CSV_DELIMITER,
                 quotechar=CSV_QUOTECHAR,
             )
             csv_writer.writerow(headers)
 
     def exportar_archivos(self):
         for nombre, filas in self.file_buffers.items():
+            logger.warning(f"DB - guardando '{nombre}'")
             with open(nombre, "a") as csv_file:
                 csv_writer = csv.writer(
                     csv_file,
-                    delimiter=CSV_DELIMITER,
+                    delimiter=self.CSV_DELIMITER,
                     quotechar=CSV_QUOTECHAR,
                 )
                 csv_writer.writerows(filas)
@@ -66,7 +74,7 @@ class CSVFileHandler(DBFileHandler):
         with open(nombre, newline="") as csv_file:
             spamreader = csv.DictReader(
                 csv_file,
-                delimiter=CSV_DELIMITER,
+                delimiter=self.CSV_DELIMITER,
                 quotechar=CSV_QUOTECHAR,
             )
             for row in spamreader:
@@ -76,7 +84,7 @@ class CSVFileHandler(DBFileHandler):
         with open(nombre, newline="") as csv_file:
             spamreader = csv.reader(
                 csv_file,
-                delimiter=CSV_DELIMITER,
+                delimiter=self.CSV_DELIMITER,
                 quotechar=CSV_QUOTECHAR,
             )
             for row in spamreader:
@@ -93,6 +101,7 @@ class ExcelFileHandler(DBFileHandler):
 
     def exportar_archivos(self):
         for nombre, filas in self.file_buffers.items():
+            logger.warning(f"DB - guardando '{nombre}'")
             wb = openpyxl.load_workbook(nombre)
             ws = wb.active
             for fila in filas:
@@ -131,8 +140,8 @@ class DB:
 
     def cambiar_handler(self, extension: str):
         logger.info("Simulación - Usando archivos %s", extension)
-        if extension == ".csv":
-            self.handler = CSVFileHandler()
+        if extension == ".csv" or extension == ".tsv":
+            self.handler = CSVFileHandler(extension)
         elif extension == ".xlsx":
             self.handler = ExcelFileHandler()
         else:

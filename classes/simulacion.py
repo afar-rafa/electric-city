@@ -83,3 +83,5 @@ class Simulacion:
 
             # # uncomment this for a step by step execution
             # input("PRESS ENTER TO CONTINUE, CTRL+D TO EXIT")
+
+        self.output.exportar_archivos()

@@ -18,7 +18,7 @@ config = dotenv_values(f"{script_dir}/env.txt")
 
 # usar la carpeta para encontrar el input
 INPUT_FILE = config.get("INPUT_FILE")
-OUTPUT_FORMAT: Literal["xlsx", "csv"] = config.get("OUTPUT_FORMAT")
+OUTPUT_FORMAT: Literal["xlsx", "tsv", "csv"] = config.get("OUTPUT_FORMAT")
 
 # Tiempo en minutos que avanza entre cada ciclo de tiempo
 MINS_POR_CICLO = int(config.get("MINS_POR_CICLO", 15))
