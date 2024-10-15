@@ -1,6 +1,6 @@
 import csv
 import logging
-from typing import List, Union
+from typing import List, Union, Dict
 import os
 import openpyxl
 
@@ -16,10 +16,19 @@ logger = logging.getLogger(__name__)
 
 # Clase base para manejar archivos
 class DBFileHandler:
+    def __init__(self):
+        # Almacena las filas en memoria para cada archivo
+        self.file_buffers: Dict[str, List[List[Union[str, int, float]]]] = {}
+
     def crear_archivo(self, nombre: str, headers: List[str]):
         raise NotImplementedError
 
-    def agregar_fila(self, nombre: str, fila: List[Union[str, int, float]]):
+    def agregar_fila_en_memoria(self, nombre: str, fila: List[Union[str, int, float]]):
+        if nombre not in self.file_buffers:
+            self.file_buffers[nombre] = []
+        self.file_buffers[nombre].append(fila)
+
+    def exportar_archivos(self):
         raise NotImplementedError
 
     def leer(self, nombre: str):
@@ -40,18 +49,15 @@ class CSVFileHandler(DBFileHandler):
             )
             csv_writer.writerow(headers)
 
-    def agregar_fila(
-        self,
-        nombre: str,
-        fila: List[Union[str, int, float]],
-    ):
-        with open(nombre, "a") as csv_file:
-            csv_writer = csv.writer(
-                csv_file,
-                delimiter=CSV_DELIMITER,
-                quotechar=CSV_QUOTECHAR,
-            )
-            csv_writer.writerow(fila)
+    def exportar_archivos(self):
+        for nombre, filas in self.file_buffers.items():
+            with open(nombre, "a") as csv_file:
+                csv_writer = csv.writer(
+                    csv_file,
+                    delimiter=CSV_DELIMITER,
+                    quotechar=CSV_QUOTECHAR,
+                )
+                csv_writer.writerows(filas)
 
     def leer(
         self,
@@ -85,11 +91,13 @@ class ExcelFileHandler(DBFileHandler):
         ws.append(headers)
         wb.save(nombre)
 
-    def agregar_fila(self, nombre: str, fila: List[Union[str, int, float]]):
-        wb = openpyxl.load_workbook(nombre)
-        ws = wb.active
-        ws.append(fila)
-        wb.save(nombre)
+    def exportar_archivos(self):
+        for nombre, filas in self.file_buffers.items():
+            wb = openpyxl.load_workbook(nombre)
+            ws = wb.active
+            for fila in filas:
+                ws.append(fila)
+            wb.save(nombre)
 
     def leer(self, nombre: str):
         wb = openpyxl.load_workbook(nombre)
@@ -111,8 +119,7 @@ class ExcelFileHandler(DBFileHandler):
 class DB:
     handler = None
 
-    
-    def __init__(self, extension: str | None =None):
+    def __init__(self, extension: str = None):
         if extension:
             self.cambiar_handler(extension)
 
@@ -122,8 +129,8 @@ class DB:
             self.cambiar_handler(extension)
         return self.handler
 
-    def cambiar_handler(self, extension):
-        print(extension)
+    def cambiar_handler(self, extension: str):
+        logger.info("Simulación - Usando archivos %s", extension)
         if extension == ".csv":
             self.handler = CSVFileHandler()
         elif extension == ".xlsx":
@@ -135,9 +142,13 @@ class DB:
         handler = self._get_handler(nombre)
         handler.crear_archivo(nombre, headers)
 
-    def agregar_fila(self, nombre: str, fila: List[Union[str, int, float]]):
+    def agregar_fila_en_memoria(self, nombre: str, fila: List[Union[str, int, float]]):
         handler = self._get_handler(nombre)
-        handler.agregar_fila(nombre, fila)
+        handler.agregar_fila_en_memoria(nombre, fila)
+
+    def exportar_archivos(self):
+        if self.handler:
+            self.handler.exportar_archivos()
 
     def leer(self, nombre: str):
         handler = self._get_handler(nombre)
@@ -164,10 +175,11 @@ class DB:
         fila = [tiempo, e.potencia_disponible] + e.bateria_de_vehículos
 
         logger.info("Simulación: %s", fila)
-        self.agregar_fila(nombre=f"{OUTPUT_FOLDER}/{e}.{OUTPUT_FORMAT}", fila=fila)
+        self.agregar_fila_en_memoria(f"{OUTPUT_FOLDER}/{e}.{OUTPUT_FORMAT}", fila)
 
         if e.tipo_edificio == Edificio.TIPO_INT:
-            fila = [tiempo] + e.prioridad_de_vehículos
-            self.agregar_fila(
-                nombre=f"{OUTPUT_FOLDER}/Prioridades {e}.{OUTPUT_FORMAT}", fila=fila
+            fila_prioridades = [tiempo] + e.prioridad_de_vehículos
+            self.agregar_fila_en_memoria(
+                f"{OUTPUT_FOLDER}/Prioridades {e}.{OUTPUT_FORMAT}",
+                fila_prioridades,
             )
