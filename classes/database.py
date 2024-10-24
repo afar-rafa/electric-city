@@ -42,11 +42,10 @@ class CSVFileHandler(DBFileHandler):
     def __init__(self, format):
         super().__init__()
         if format == ".tsv":
-            self.CSV_DELIMITER = "\t" 
+            self.CSV_DELIMITER = "\t"
         else:
             self.CSV_DELIMITER = ","
-            
-        
+
     def crear_archivo(self, nombre: str, headers: List[str]):
         with open(nombre, "w") as csv_file:
             csv_writer = csv.writer(

@@ -41,17 +41,6 @@ def get_rand_time(t: datetime.datetime) -> datetime.datetime:
     return t + datetime.timedelta(minutes=delta * MINS_POR_CICLO)
 
 
-def get_hh_mm_time(timestamp: str, dia: int) -> datetime.datetime:
-    """
-    Crea instancias de datetime.time a partir de un "HH:MM" string
-    """
-    t = datetime.datetime.combine(
-        datetime.date.today(),
-        datetime.time(*[int(i) for i in timestamp.split(":")]),
-    ) + datetime.timedelta(days=dia)
-    return t
-
-
 def distancia_en_minutos(
     desde: datetime.datetime | None = None,
     hasta: datetime.datetime | None = None,

@@ -2,7 +2,7 @@ import copy
 import datetime
 import logging
 from random import randrange
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 
@@ -36,9 +36,11 @@ class Edificio:
     def __init__(
         self,
         nombre: str,
+        timer: Timer,
     ):
         self.nombre = nombre
         self.tipo_edificio = ""  # FIFO/RoundRobin/Inteligente
+        self.timer = timer
 
         # Potencia total disponible del edificio
         self.potencia_declarada = c.POTENCIA_DECLARADA
@@ -157,22 +159,63 @@ class Edificio:
         """
         raise NotImplementedError
 
-    def agregar_a_cola_de_espera(self, autos_a_cargar: List[Vehiculo]):
+    def agregar_a_cola_de_espera(
+        self, t: datetime.datetime, autos_a_cargar: List[Vehiculo]
+    ):
         # primero poner en espera los que necesitan carga para su sgte viaje
         for v in [v for v in autos_a_cargar if v.necesita_carga]:
-            logger.info(
+            logger.debug(
                 f"%s: {v} - necesita carga [{v.bateria:.2f} < {v.gasto_sgte_salida:.2f}]",
                 self,
             )
             self._agregar_a_cola_de_espera(v)
 
         # luego los que no estan a full
-        for v in [v for v in autos_a_cargar if not v.necesita_carga]:
-            logger.debug(
-                f"%s: {v} - no esta a full [{v.bateria:.2f} < {v.max_bateria:.2f}]",
-                self,
-            )
-            self._agregar_a_cola_de_espera(v)
+        for v in [
+            v
+            for v in autos_a_cargar
+            if not v.cargado_full and v not in self.cola_de_espera
+        ]:
+            if not c.HAY_ALTA_DEMANDA:
+                logger.debug(
+                    f"%s: {v} - no esta a full [{v.bateria:.2f} < {v.max_bateria:.2f}]",
+                    self,
+                )
+                self._agregar_a_cola_de_espera(v)
+            else:
+                # si estamos en horario de alta demanda y el auto tiene suficiente para el resto del dia, no agregar
+                if self.timer.time_in_range(
+                    t, c.INICIO_HORARIO_ALTA_DEMANDA, c.FINAL_HORARIO_ALTA_DEMANDA
+                ):
+                    bateria_necesaria = (
+                        v.gasto_total_del_dia
+                        + v.max_bateria * c.HOLGURA_ALTA_DEMANDA / 100
+                    )
+                    if bateria_necesaria <= v.bateria:
+                        logger.warning(
+                            f"%s: %s - Saltando por horario de alta demanda [t=(%s<%s<%s), bateria=(%.2f <= %.2f)]",
+                            self,
+                            v,
+                            c.INICIO_HORARIO_ALTA_DEMANDA,
+                            t.strftime("%H:%M"),
+                            c.FINAL_HORARIO_ALTA_DEMANDA,
+                            bateria_necesaria,
+                            v.bateria,
+                        )
+                        continue
+                    else:
+                        logger.warning(
+                            f"%s: %s - Cargando en horario de alta demanda [t=(%s<%s<%s), bateria=(%.2f > %.2f)]",
+                            self,
+                            v,
+                            c.INICIO_HORARIO_ALTA_DEMANDA,
+                            t.strftime("%H:%M"),
+                            c.FINAL_HORARIO_ALTA_DEMANDA,
+                            bateria_necesaria,
+                            v.bateria,
+                        )
+
+                self._agregar_a_cola_de_espera(v)
 
     def sacar_de_cola_de_espera(self, v: Vehiculo):
         if v in self.cola_de_espera:
@@ -280,7 +323,7 @@ class Edificio:
 
         # pasar a cola de espera los autos que necesiten carga
         logger.debug(f"%s: {autos_a_cargar=}", self)
-        self.agregar_a_cola_de_espera(autos_a_cargar)
+        self.agregar_a_cola_de_espera(t, autos_a_cargar)
 
         logger.debug(f"%s: {self.cola_de_espera=}", self)
 

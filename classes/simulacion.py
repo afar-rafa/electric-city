@@ -35,6 +35,7 @@ class Simulacion:
         for e in csv_edificios:
             edificio = Edificio(
                 nombre=e,
+                timer=self.timer,
             )
             if c.SIMULAR_FIFO:
                 self.edificios.append(

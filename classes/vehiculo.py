@@ -91,6 +91,8 @@ class Vehiculo:
     def prioridad(self) -> float:
         """
         valor a usar al ordenar los vehículos en un edificio
+
+        actualmente es el porcentaje de bateria que necesita para realizar todos sus viajes
         """
         prioridad = (self.gasto_total_del_dia - self.bateria) / self.max_bateria
 
