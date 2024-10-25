@@ -1,7 +1,7 @@
 import logging
 
 from classes.simulacion import Simulacion
-from helpers.constants import LOG_LEVEL, INPUT_FILE
+from helpers.constants import INPUT_FILE, LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(

@@ -4,9 +4,8 @@ import random
 import sys
 from typing import Literal
 
-from dotenv import dotenv_values
 import numpy as np
-
+from dotenv import dotenv_values
 
 # ------------------- Constantes Simulacion -------------------
 # Obtener la carpeta en donde se ejecutó main.py

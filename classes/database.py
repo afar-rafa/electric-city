@@ -1,11 +1,12 @@
 import csv
 import logging
-from typing import List, Union, Dict
 import os
+from typing import Dict, List, Union
+
 import openpyxl
 
-from helpers.constants import OUTPUT_FORMAT, script_dir
 from classes.edificio import Edificio
+from helpers.constants import OUTPUT_FORMAT, script_dir
 
 CSV_QUOTECHAR = '"'
 OUTPUT_FOLDER = f"{script_dir}/outputs"

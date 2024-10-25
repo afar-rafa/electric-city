@@ -6,8 +6,8 @@ from typing import List
 
 import numpy as np
 
-from classes.timer import Timer
 import helpers.constants as c
+from classes.timer import Timer
 from classes.vehiculo import Vehiculo
 
 logger = logging.getLogger(__name__)
