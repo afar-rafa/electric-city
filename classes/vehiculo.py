@@ -106,7 +106,13 @@ class Vehiculo:
         t_inicio: datetime.datetime,
         t_final: datetime.datetime,
     ) -> float:
+        """
+        Gasto de energia en KWh para un viaje en un tiempo determinado
+        topando el tiempo de manejo a un maximo de minutos
+        (usado para calcular el gasto cuando los autos salen del edificio)
+        """
         total_minutos = (t_final - t_inicio).total_seconds() / 60
+
         # limitar las horas de viaje
         total_minutos = min(total_minutos, c.TOPE_TIEMPO_DE_MANEJO)
 
@@ -120,16 +126,19 @@ class Vehiculo:
     @property
     def gasto_total_del_dia(self) -> float:
         """
-        Total de bateria que se requiere diariamente
+        Total de % de bateria que se requiere diariamente
         """
         gasto = 0
         logger.debug(f"{self.edificio}: {self} - Revisando salidas {self.salidas}")
 
+        # total de KWh que se consume en un dia
         for s in self.salidas:
             gasto += self.gasto_de_viaje(s[0], s[1])
 
         logger.debug(f"{self.edificio}: {self} - Gasto calculado [{gasto=}]")
-        return gasto
+
+        # retornar gasto en relación a la bateria total
+        return gasto / self.max_bateria
 
     def esta_manejando(self, t: datetime.time) -> bool:
         salida, llegada = self.salidas[self.siguiente_salida]
