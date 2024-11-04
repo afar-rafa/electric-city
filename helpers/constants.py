@@ -51,7 +51,9 @@ REDUCCION_EN_FALLA = float(config.get("REDUCCION_EN_FALLA", 10))
 HAY_ALTA_DEMANDA = bool(int(config.get("HAY_ALTA_DEMANDA", 0)))
 INICIO_HORARIO_ALTA_DEMANDA = config.get("INICIO_HORARIO_ALTA_DEMANDA", "22:00")
 FINAL_HORARIO_ALTA_DEMANDA = config.get("FINAL_HORARIO_ALTA_DEMANDA", "00:00")
-HOLGURA_ALTA_DEMANDA = int(config.get("HOLGURA_ALTA_DEMANDA", 25))
+HOLGURA_ALTA_DEMANDA = (
+    int(config.get("HOLGURA_ALTA_DEMANDA", 25)) if HAY_ALTA_DEMANDA else 0
+)
 
 # ------------------- Constantes vehículos --------------------
 VELOCIDAD_PROMEDIO = int(config.get("VELOCIDAD_PROMEDIO", 50))  # KM/h

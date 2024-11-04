@@ -1,4 +1,5 @@
 import datetime
+from functools import cache
 import logging
 import math
 from random import randrange
@@ -94,7 +95,7 @@ class Vehiculo:
 
         actualmente es el porcentaje de bateria que necesita para realizar todos sus viajes
         """
-        prioridad = (self.gasto_total_del_dia - self.bateria) / self.max_bateria
+        prioridad = self.gasto_total_del_dia - self.bateria / self.max_bateria
 
         logger.info(
             f"{self.edificio} - {self}: [gasto_restante={self.gasto_total_del_dia:.1f} - bateria={self.bateria:.1f} = prioridad={prioridad:.1f}]"
@@ -124,21 +125,23 @@ class Vehiculo:
         return self.gasto_de_viaje(salida, llegada)
 
     @property
+    @cache
     def gasto_total_del_dia(self) -> float:
         """
         Total de % de bateria que se requiere diariamente
+        incluyendo la holgura de alta demanda
         """
         gasto = 0
-        logger.debug(f"{self.edificio}: {self} - Revisando salidas {self.salidas}")
 
         # total de KWh que se consume en un dia
         for s in self.salidas:
             gasto += self.gasto_de_viaje(s[0], s[1])
 
-        logger.debug(f"{self.edificio}: {self} - Gasto calculado [{gasto=}]")
+        logger.debug(f"{self.edificio}: {self} - Gasto total del dia [gasto=%.2f%%, holgura=%.2f%%]", gasto/self.max_bateria, c.HOLGURA_ALTA_DEMANDA/100)
 
         # retornar gasto en relación a la bateria total
-        return gasto / self.max_bateria
+        # (agregando la holgura de alta demanda)
+        return (gasto / self.max_bateria) + (c.HOLGURA_ALTA_DEMANDA / 100)
 
     def esta_manejando(self, t: datetime.time) -> bool:
         salida, llegada = self.salidas[self.siguiente_salida]
