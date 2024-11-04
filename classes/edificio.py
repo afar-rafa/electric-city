@@ -343,9 +343,15 @@ class EdificioFIFO(Edificio):
 
     def limpiar_cola_de_carga(self):
         """
-        Mantiene sólo los vehículos que no estan a full carga
-        mientras la potencia disponible lo permita
+        No saca los vehículos a menos que no esten a full carga o
+        deban viajar (mientras la potencia disponible lo permita)
         """
+        # saca los que estan a full
+        for v in self.cola_de_carga:
+            if v.cargado_full:
+                self.sacar_de_cola_de_carga(v)
+        
+        # revisar limite segun potencia
         if self.cola_de_carga_llena:
             max_capacidad = int(self.potencia_disponible / self.potencia_cargadores)
 
