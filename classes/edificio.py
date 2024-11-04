@@ -89,6 +89,9 @@ class Edificio:
         """
         porcentaje_disponible = 1 - (float(porcentaje_consumo) / 100)
 
+        # aplicar el factor de escala
+        porcentaje_disponible *= c.FACTOR_DE_ESCALA / 100
+
         # si es un periodo de falla, reducir la potencia total
         if c.HAY_FALLA and Timer().time_in_range(
             t, c.INICIO_HORARIO_FALLA, c.FINAL_HORARIO_FALLA
@@ -153,63 +156,49 @@ class Edificio:
     def agregar_a_cola_de_espera(
         self, t: datetime.datetime, autos_a_cargar: List[Vehiculo]
     ):
-        # primero poner en espera los que necesitan carga para su sgte viaje
-        for v in [v for v in autos_a_cargar if v.necesita_carga]:
-            logger.debug(
-                f"%s: {v} - necesita carga [{v.bateria:.2f}KWh < {v.gasto_sgte_salida:.2f}KWh]",
+        # ordenar los autos a cargar, poniendo primero los que necesitan carga
+        autos_a_cargar.sort(key=lambda v: v.necesita_carga, reverse=True)
+
+        for v in autos_a_cargar:
+            bateria_actual = v.bateria / v.max_bateria
+            message = ""
+
+            # si estamos en horario de alta demanda y el auto tiene suficiente para el resto del dia, no agregar
+            if (
+                c.HAY_ALTA_DEMANDA
+                and self.timer.time_in_range(
+                    t, c.INICIO_HORARIO_ALTA_DEMANDA, c.FINAL_HORARIO_ALTA_DEMANDA
+                )
+            ):
+                if bateria_actual >= v.gasto_total_del_dia:
+                    logger.info(
+                        f"%s: %s - Saltando por horario de alta demanda [t=(%s<%s<%s), bateria=%.2f%%, necesita=%.2f%%, necesita_carga=%s]",
+                        self,
+                        v,
+                        c.INICIO_HORARIO_ALTA_DEMANDA,
+                        t.strftime("%H:%M"),
+                        c.FINAL_HORARIO_ALTA_DEMANDA,
+                        bateria_actual,
+                        v.gasto_total_del_dia,
+                        v.necesita_carga,
+                    )
+                    continue
+                else:
+                    message = " en alta demanda"
+
+            logger.info(
+                f"%s: %s - Agregando a espera%s [t=(%s<%s<%s), bateria=%.2f%%, necesita=%.2f%%, necesita_carga=%s]",
                 self,
+                v,
+                message,
+                c.INICIO_HORARIO_ALTA_DEMANDA,
+                t.strftime("%H:%M"),
+                c.FINAL_HORARIO_ALTA_DEMANDA,
+                bateria_actual,
+                v.gasto_total_del_dia,
+                v.necesita_carga,
             )
             self._agregar_a_cola_de_espera(v)
-
-        # luego los que no estan a full
-        for v in [
-            v
-            for v in autos_a_cargar
-            if not v.cargado_full and v not in self.cola_de_espera
-        ]:
-            if not c.HAY_ALTA_DEMANDA:
-                logger.debug(
-                    f"%s: {v} - no esta a full [{v.bateria:.2f}KWh < {v.max_bateria:.2f}KWh]",
-                    self,
-                )
-                self._agregar_a_cola_de_espera(v)
-            else:
-                # si estamos en horario de alta demanda y el auto tiene suficiente para el resto del dia, no agregar
-                if self.timer.time_in_range(
-                    t, c.INICIO_HORARIO_ALTA_DEMANDA, c.FINAL_HORARIO_ALTA_DEMANDA
-                ):
-                    bateria_necesaria = (
-                        v.gasto_total_del_dia + c.HOLGURA_ALTA_DEMANDA / 100
-                    )
-                    bateria_actual = v.bateria / v.max_bateria
-
-                    if bateria_necesaria <= bateria_actual:
-                        logger.warning(
-                            f"%s: %s - Saltando por horario de alta demanda [t=(%s<%s<%s), bateria=(%.2f%% + %.2f%% <= %.2f%%)]",
-                            self,
-                            v,
-                            c.INICIO_HORARIO_ALTA_DEMANDA,
-                            t.strftime("%H:%M"),
-                            c.FINAL_HORARIO_ALTA_DEMANDA,
-                            v.gasto_total_del_dia,
-                            c.HOLGURA_ALTA_DEMANDA / 100,
-                            bateria_actual,
-                        )
-                        continue
-                    else:
-                        logger.warning(
-                            f"%s: %s - Cargando en horario de alta demanda [t=(%s<%s<%s), bateria=(%.2f%% + %.2f%% > %.2f%%)]",
-                            self,
-                            v,
-                            c.INICIO_HORARIO_ALTA_DEMANDA,
-                            t.strftime("%H:%M"),
-                            c.FINAL_HORARIO_ALTA_DEMANDA,
-                            v.gasto_total_del_dia,
-                            c.HOLGURA_ALTA_DEMANDA / 100,
-                            bateria_actual,
-                        )
-
-                self._agregar_a_cola_de_espera(v)
 
     def sacar_de_cola_de_espera(self, v: Vehiculo):
         if v in self.cola_de_espera:
