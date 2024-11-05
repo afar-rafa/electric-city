@@ -143,7 +143,7 @@ class Vehiculo:
         # (agregando la holgura de alta demanda)
         return (gasto / self.max_bateria) + (c.HOLGURA_ALTA_DEMANDA / 100)
 
-    def esta_manejando(self, t: datetime.time) -> bool:
+    def esta_manejando(self, t: datetime.datetime) -> bool:
         salida, llegada = self.salidas[self.siguiente_salida]
         distancia_t = distancia_en_minutos(salida, llegada)
 
@@ -156,7 +156,7 @@ class Vehiculo:
         if c.TOPE_TIEMPO_DE_MANEJO <= distancia_t:
             tope_de_manejo = datetime.timedelta(minutes=c.TOPE_TIEMPO_DE_MANEJO / 2)
 
-            if salida + tope_de_manejo <= t <= llegada - tope_de_manejo:
+            if (salida + tope_de_manejo).time() <= t.time() <= (llegada - tope_de_manejo).time():
                 logger.info(f"{self.edificio}: {self} - no esta_manejando [False]")
                 return False
 
