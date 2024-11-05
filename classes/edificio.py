@@ -87,6 +87,10 @@ class Edificio:
         """
         Se asigna al edificio actual en cada ciclo de tiempo
         """
+        # si el porcentaje de consumo tiene una coma, reemplazarla por un punto
+        if "," in porcentaje_consumo:
+            porcentaje_consumo = porcentaje_consumo.replace(",", ".")
+
         porcentaje_disponible = 1 - (float(porcentaje_consumo) / 100)
 
         # aplicar el factor de escala
