@@ -91,10 +91,7 @@ class Edificio:
         if "," in porcentaje_consumo:
             porcentaje_consumo = porcentaje_consumo.replace(",", ".")
 
-        porcentaje_disponible = 1 - (float(porcentaje_consumo) / 100)
-
-        # aplicar el factor de escala
-        porcentaje_disponible *= c.FACTOR_DE_ESCALA / 100
+        porcentaje_disponible = 1 - (float(porcentaje_consumo) / 100 * c.FACTOR_DE_ESCALA / 100)
 
         # si es un periodo de falla, reducir la potencia total
         if c.HAY_FALLA and Timer().time_in_range(
