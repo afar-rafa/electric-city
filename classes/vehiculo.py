@@ -34,7 +34,6 @@ class Vehiculo:
         self.edificio = None
         self.en_el_edificio = True
         self.necesita_carga = None
-        self.tiempo_en_espera = 0
 
         # obtener salidas para el dia
         t = Timer()
@@ -183,7 +182,6 @@ class Vehiculo:
         Carga la energia indicada.
         Si sobrepasa lo que aguanta la bateria, deja el valor de la bateria
         """
-        self.tiempo_en_espera = 0
         self.bateria += energia
         self.bateria = min(self.bateria, self.max_bateria)
         logger.debug(
@@ -197,9 +195,6 @@ class Vehiculo:
         """
         # Revisar si tiene suficiente para su siguiente viaje
         self.necesita_carga = self.necesita_cargarse
-
-        # agrega tiempo en espera de cada ciclo
-        self.tiempo_en_espera += c.MINS_POR_CICLO
 
         # Revisar si está en el edificio
         salida, llegada = self.salidas[self.siguiente_salida]
