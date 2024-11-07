@@ -182,11 +182,16 @@ class Vehiculo:
         Carga la energia indicada.
         Si sobrepasa lo que aguanta la bateria, deja el valor de la bateria
         """
+        # agregar la bateria
         self.bateria += energia
+        # si la bateria esta llena, no se puede cargar mas
         self.bateria = min(self.bateria, self.max_bateria)
         logger.debug(
             f"{self.edificio}: {self} carga energia [bateria={self.bateria:.2f}]"
         )
+
+        # tambien guardar la carga en potencia_usada_por_autos del edificio
+        self.edificio.potencia_usada_por_autos += energia
 
     def actualizar_status(self, t: datetime.datetime) -> None:
         """

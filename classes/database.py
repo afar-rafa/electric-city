@@ -171,7 +171,7 @@ class DB:
         for e in edificios:
             self.crear_archivo(
                 nombre=f"{OUTPUT_FOLDER}/{e}.{OUTPUT_FORMAT}",
-                headers=["Tiempo", "Potencia Disponible"]
+                headers=["Tiempo", "Potencia Disponible", "Gasto de Cargadores"]
                 + [f"{v}" for v in e.vehículos],
             )
             if e.tipo_edificio == Edificio.TIPO_INT:
@@ -181,7 +181,7 @@ class DB:
                 )
 
     def guardar_estado_de_edificio(self, tiempo: str, e: Edificio):
-        fila = [tiempo, e.potencia_disponible] + e.bateria_de_vehículos
+        fila = [tiempo, e.potencia_disponible, e.potencia_usada_por_autos] + e.bateria_de_vehículos
 
         logger.info("Simulación: %s", fila)
         self.agregar_fila_en_memoria(f"{OUTPUT_FOLDER}/{e}.{OUTPUT_FORMAT}", fila)

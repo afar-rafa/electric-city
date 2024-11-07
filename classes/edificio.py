@@ -50,6 +50,7 @@ class Edificio:
 
         # potencia disponible, calculada durante la simulacion
         self.potencia_disponible: float | None = None
+        self.potencia_usada_por_autos: float | None = None
 
         # colas de vehículos
         self.cola_de_espera: List[Vehiculo] = []
@@ -281,6 +282,7 @@ class Edificio:
         logger.debug(f"{self}: t={t.strftime('%H:%M')} {porcentaje_consumo=}")
 
         self.actualizar_potencia_disponible(t, porcentaje_consumo)
+        self.potencia_usada_por_autos = 0
 
         # los esto es para separar aquellos que necesitan carga para
         # su siguiente viaje y aquellos que solo no están a 100%
